@@ -61,7 +61,7 @@
     {
       "id": "live.locked_engine.notebooklm_transport",
       "status": "BLOCKED",
-      "description": "The deterministic live candidate could not create its disposable notebook after three empty notebook listings; upstream UI navigation timed out at page.waitForURL."
+      "description": "Transport incident classified UNKNOWN_TRANSIENT for catalog/create (24 notebooks and one disposable create recovered), but reproducibly BLOCKED during deterministic engine runs: the live process exceeded its bounded window and left an upstream Chrome session unresponsive."
     }
   ],
   "verdict": "RELEASE_BLOCKED"

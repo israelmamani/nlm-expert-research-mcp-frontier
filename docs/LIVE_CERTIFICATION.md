@@ -57,4 +57,4 @@ MCPB SHA-256: `NOT_BUILT`
 
 ## Open P1
 
-- `live.locked_engine.notebooklm_transport`: The deterministic live candidate could not create its disposable notebook after three empty notebook listings; upstream UI navigation timed out at `page.waitForURL`.
+- `live.locked_engine.notebooklm_transport`: Catalog/create recovered (24 notebooks and one disposable create), but deterministic engine runs reproducibly exceeded their bounded window and left an upstream Chrome session unresponsive.
