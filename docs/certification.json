@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "product": "nlm-expert-research-mcp-frontier",
-  "certified_code_sha": "503be3110693e03069879bbb881e59ec563da480",
-  "certified_subject_sha": "503be3110693e03069879bbb881e59ec563da480",
-  "attestation_commit_sha": "5c6937b2409aeebe53b9922906e0c7502e9b53d9",
-  "timestamp": "2026-08-08T18:33:56.768Z",
+  "certified_code_sha": "728cad207b0975f49413044147d2d4c8dd59f43b",
+  "certified_subject_sha": "728cad207b0975f49413044147d2d4c8dd59f43b",
+  "attestation_commit_sha": "728cad207b0975f49413044147d2d4c8dd59f43b",
+  "timestamp": "2026-08-08T19:35:37.600Z",
   "environment": {
     "platform": "win32",
     "node": "v26.3.1"
@@ -27,9 +27,10 @@
     "grounded_query": "PASS",
     "citations": "PASS",
     "dynamic_notebook": "PASS",
-    "dynamic_source": "FAIL",
-    "delete_invalidation": "NOT_RUN",
-    "rename": "NOT_RUN"
+    "dynamic_source": "PASS",
+    "delete_invalidation": "PASS",
+    "rename": "NOT_RUN",
+    "locked_engine": "FAIL"
   },
   "claude_desktop": {
     "mcpb": "NOT_RUN",
@@ -39,22 +40,21 @@
     "browser_invisible": "NOT_RUN"
   },
   "blocking_gates": [
-    "live.auth",
-    "live.persistence",
-    "live.enumeration",
-    "live.grounded_query",
-    "live.citations",
-    "live.dynamic_notebook",
-    "live.dynamic_source",
+    "live.locked_engine",
     "claude_desktop.mcpb",
+    "claude_desktop.tools",
     "claude_desktop.natural_invocation",
     "claude_desktop.same_session_discovery",
     "claude_desktop.browser_invisible"
   ],
-  "mcpb_sha256": "0532BEE7A5966EBAF744C9D2A6351B5151A0A414481B32B9FFFD2AB5A522D50C",
+  "mcpb_sha256": "NOT_BUILT",
   "open_p0": [],
   "open_p1": [
-    "live.dynamic_source"
+    {
+      "id": "live.locked_engine.claim_evidence_linkage",
+      "status": "FAIL",
+      "description": "The live LOCKED capsule returned cited evidence but no claim-to-evidence link in two full certification runs; an isolated retry passed."
+    }
   ],
   "verdict": "RELEASE_BLOCKED"
 }

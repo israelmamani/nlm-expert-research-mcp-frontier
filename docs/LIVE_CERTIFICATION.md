@@ -2,9 +2,9 @@
 
 Generated from `docs/certification.json`.
 
-- Certified code SHA: `503be3110693e03069879bbb881e59ec563da480`
-- Attestation commit: `5c6937b2409aeebe53b9922906e0c7502e9b53d9`
-- Timestamp: 2026-08-08T18:33:56.768Z
+- Certified code SHA: `728cad207b0975f49413044147d2d4c8dd59f43b`
+- Attestation commit: `728cad207b0975f49413044147d2d4c8dd59f43b`
+- Timestamp: 2026-08-08T19:35:37.600Z
 - Verdict: **RELEASE_BLOCKED**
 
 ## Local gates
@@ -23,9 +23,10 @@ Generated from `docs/certification.json`.
 - grounded_query: **PASS**
 - citations: **PASS**
 - dynamic_notebook: **PASS**
-- dynamic_source: **FAIL**
-- delete_invalidation: **NOT_RUN**
+- dynamic_source: **PASS**
+- delete_invalidation: **PASS**
 - rename: **NOT_RUN**
+- locked_engine: **FAIL**
 
 ## Claude Desktop
 
@@ -37,16 +38,15 @@ Generated from `docs/certification.json`.
 
 ## Blocking gates
 
-- `live.auth`
-- `live.persistence`
-- `live.enumeration`
-- `live.grounded_query`
-- `live.citations`
-- `live.dynamic_notebook`
-- `live.dynamic_source`
+- `live.locked_engine`
 - `claude_desktop.mcpb`
+- `claude_desktop.tools`
 - `claude_desktop.natural_invocation`
 - `claude_desktop.same_session_discovery`
 - `claude_desktop.browser_invisible`
 
-MCPB SHA-256: `0532BEE7A5966EBAF744C9D2A6351B5151A0A414481B32B9FFFD2AB5A522D50C`
+MCPB SHA-256: `NOT_BUILT`
+
+## Open P1
+
+- `live.locked_engine.claim_evidence_linkage`: The live LOCKED capsule returned cited evidence but no claim-to-evidence link in two full certification runs; an isolated retry passed.
