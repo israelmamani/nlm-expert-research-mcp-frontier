@@ -16,7 +16,7 @@ npm run setup-auth -- --force
 npm run package:mcpb
 ```
 
-El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas. Google revoca la sesión de esta cuenta al automatizar Chrome headless, por lo que producción usa Chrome real minimizado con perfil persistente; `setup_auth` permite autenticar o forzar reautenticación desde MCP.
+El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas. Google revoca la sesión de esta cuenta al automatizar Chrome headless, por lo que producción usa Chrome real con perfil persistente y oculta su ventana mediante la API nativa de Windows. `NLM_HIDE_BROWSER=0` permite mostrarla para diagnóstico; `setup_auth` siempre abre la autenticación manual cuando es necesaria.
 
 ## Herramientas MCP
 

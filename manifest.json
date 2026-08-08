@@ -15,7 +15,8 @@
       "args": ["${__dirname}/dist/index.js"],
       "env": {
         "NLM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/frontier",
-        "NLM_UPSTREAM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/upstream"
+        "NLM_UPSTREAM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/upstream",
+        "NLM_HIDE_BROWSER": "1"
       }
     }
   },
