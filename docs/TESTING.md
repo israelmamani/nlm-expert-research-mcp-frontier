@@ -1,3 +1,3 @@
 # Testing
 
-`npm test` ejecuta tests locales deterministas: cache miss, rename/delete, evidence capsule, aislamiento, gate de internet, recuperación atómica y 100 investigaciones secuenciales. `npm run test:live` solo se habilita con `NLM_LIVE_TEST=1`; exige sesión real y no convierte mocks en live. Live NotebookLM, auth persistence, Claude Desktop y MCPB install requieren interacción externa.
+`npm test` ejecuta tests locales deterministas: cache miss, rename/delete, evidence capsule, aislamiento, politica LOCKED, sanitizacion web, recuperacion atomica, transacciones concurrentes, mapeo claim-evidence, autenticacion y 100 investigaciones secuenciales. Las tres pruebas live se omiten salvo que se habiliten explicitamente; `npm run certify:live` nunca las convierte en PASS si faltan credenciales. Live NotebookLM, auth persistence y Claude Desktop requieren interaccion externa.

@@ -12,6 +12,10 @@
     "patch:upstream": "node scripts/patch-upstream.mjs",
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test tests/**/*.test.js",
+    "certify:local": "npm run build && node --test tests/core.test.js",
+    "certify:live": "npm run build && node scripts/certify-live.mjs",
+    "check:integrity": "node scripts/check-release-integrity.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
     "test:live": "npm run build && node --test tests/live.test.js",
     "start": "node dist/index.js",
     "doctor": "node dist/cli.js doctor",
@@ -20,7 +24,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@roomi-fields/notebooklm-mcp": "^3.0.1",
+    "@roomi-fields/notebooklm-mcp": "3.0.1",
     "playwright": "^1.62.1",
     "zod": "^3.25.76"
   },

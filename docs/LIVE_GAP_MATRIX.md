@@ -1,19 +1,15 @@
-# Live gap matrix — audit branch
+# Live gap matrix
 
-| Requirement | Status | Evidence |
+| Requisito | Implementacion | Estado de certificacion |
 |---|---|---|
-| Real browser transport | IMPLEMENTED_REAL / UNTESTED_AUTH | `src/browser-adapter.ts`; `npm run doctor` reached NotebookLM and returned `AUTH_REQUIRED` |
-| Persistent profile | IMPLEMENTED_REAL / UNTESTED_AUTH | Playwright `launchPersistentContext`, dedicated lock/profile |
-| Notebook listing | IMPLEMENTED_REAL / UNTESTED_AUTH | DOM enumeration with URL/ID extraction |
-| Refresh-on-miss | IMPLEMENTED_REAL / UNTESTED_AUTH | registry calls adapter live on miss |
-| Source listing | IMPLEMENTED_REAL / UNTESTED_AUTH | `.single-source-container` extraction |
-| Q&A wait | IMPLEMENTED_REAL / UNTESTED_AUTH | bounded stability polling |
-| Citations | IMPLEMENTED_REAL / UNTESTED_AUTH | citation marker + highlighted passage extraction |
-| Citation verification | PARTIAL | deterministic token-overlap classification; no second model |
-| Internet challenger | IMPLEMENTED_REAL / UNTESTED_NETWORK | opt-in DuckDuckGo candidate retrieval, quarantined |
-| Token governor | PARTIAL | bounded capsule fields and `get_evidence`; no configurable token estimator |
-| Atomic persistence | IMPLEMENTED_REAL | temp write, backup and corruption recovery |
-| MCPB dependency bundling | IMPLEMENTED_REAL / INSTALL_UNTESTED | staging installs production dependencies |
-| Claude Desktop E2E | NOT_TESTED | requires local Claude Desktop interaction |
+| Transporte real NotebookLM | `UpstreamNotebookLmAdapter` 3.0.1 | IMPLEMENTED / NOT_CERTIFIED |
+| Perfil persistente y recuperacion | `src/upstream-adapter.ts`, `src/auth-recovery.ts` | IMPLEMENTED / NOT_CERTIFIED |
+| Enumeracion y refresh-on-miss | `NotebookRegistry` | MOCK_TESTED / LIVE_PENDING |
+| Fuentes y citas | `src/browser-adapter.ts` | IMPLEMENTED / LIVE_PENDING |
+| Contraevidencia | pasada `counter` en `ResearchEngine` | LOCAL_TESTED / LIVE_PENDING |
+| Politica de Internet | `LOCKED` por defecto + sanitizacion | LOCAL_TESTED |
+| Persistencia | `Store.update`, backup y rename atomico | LOCAL_TESTED |
+| MCPB | staging instala dependencias de produccion | PACKAGE_VALIDATED / INSTALL_PENDING |
+| Claude Desktop E2E | requiere cliente y login humanos | NOT_RUN |
 
-Mocks remain test-only and are not evidence for live gates.
+Los tests mock no constituyen evidencia live. La fuente de verdad de la certificacion es `docs/certification.json`.
