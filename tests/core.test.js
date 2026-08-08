@@ -125,6 +125,13 @@ test('Frontier mutations are RPC-only and upstream cannot replay uncertain write
   assert.match(rpc,/FRONTIER_NO_MUTATION_RETRY/);assert.match(rpc,/FRONTIER_MUTATION_RPCS\.has\(name\)/);
 });
 
+test('RPC transport uses the authenticated profile account host',async()=>{
+  const tools=await readFile('node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js','utf8');
+  const start=tools.indexOf('async getRpcClient()');const end=tools.indexOf('async getNotebookRpc()',start);const handler=tools.slice(start,end);
+  assert.match(handler,/FRONTIER_RPC_ACCOUNT_HOST/);assert.match(handler,/context\.storageState\(\)/);assert.match(handler,/baseHost, hl: CONFIG\.uiLocale/);
+  assert.doesNotMatch(handler,/new BatchExecuteClient\(\{ cookies, hl:/);
+});
+
 test('known cached notebook remains usable as stale when remote discovery fails',async()=>{
   const f=await fixture();await f.registry.sync();f.adapter.listNotebooks=async()=>{throw new Error('transport unavailable');};
   const notebook=await f.registry.resolve('TIDAL','force');assert.equal(notebook.id,'nb-tidal');assert.equal(notebook.catalog_stale,true);

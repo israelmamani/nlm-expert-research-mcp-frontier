@@ -33,6 +33,7 @@ if(!tools.includes('notebook(?:lm)?\\.google\\.com'))throw new Error('Upstream h
 if(!tools.includes('FRONTIER_RPC_SOURCE_LIST')||!tools.includes('frontier_sources_only'))throw new Error('Frontier RPC-only source-list patch is absent');
 if(!tools.includes('FRONTIER_RPC_CITATION_SOURCE_ID')||!tools.includes('sourceId: r.source_id'))throw new Error('Frontier RPC citation source-id patch is absent');
 if(!tools.includes('FRONTIER_RPC_MUTATION_GUARD')||!tools.includes('frontier_rpc_only'))throw new Error('Frontier RPC-only mutation guard is absent');
+if(!tools.includes('FRONTIER_RPC_ACCOUNT_HOST')||!tools.includes('baseHost, hl: CONFIG.uiLocale'))throw new Error('Frontier account-resolved RPC host patch is absent');
 if(!rpc.includes('FRONTIER_NO_MUTATION_RETRY')||!rpc.includes('FRONTIER_MUTATION_RPCS.has(name)'))throw new Error('Upstream mutation no-retry patch is absent');
 if(!runtime.includes("'--start-minimized'"))throw new Error('Upstream minimized-browser patch is absent');
 if(!auth.includes('FRONTIER_EXTERNAL_AUTH_RECOVERY'))throw new Error('Upstream external-auth patch is absent');

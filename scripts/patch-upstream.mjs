@@ -172,3 +172,22 @@ else {
   await writeFile(rpcTarget,patched,'utf8');
   console.log('Applied NotebookLM mutation no-retry patch.');
 }
+
+const rpcAccountHostMarker='FRONTIER_RPC_ACCOUNT_HOST';
+const hostToolsSource=await readFile(target,'utf8');
+if(hostToolsSource.includes(rpcAccountHostMarker)) console.log('NotebookLM account-resolved RPC host patch already applied.');
+else {
+  const hostAnchor=`        const raw = await context.cookies('https://notebooklm.google.com');
+        const cookies = raw.map((c) => ({ name: c.name, value: c.value }));
+        return new BatchExecuteClient({ cookies, hl: CONFIG.uiLocale });`;
+  if(!hostToolsSource.includes(hostAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: RPC account-host anchor was not found in ${target}`);
+  const patched=hostToolsSource.replace(hostAnchor,`        // ${rpcAccountHostMarker}: use the host where this authenticated profile actually runs.
+        const state = await context.storageState();
+        const notebookOrigin = state.origins.find((entry) => /^https:\\/\\/notebook(?:lm)?\\.google\\.com$/i.test(entry.origin))?.origin;
+        const baseHost = notebookOrigin ? new URL(notebookOrigin).hostname : 'notebooklm.google.com';
+        const raw = await context.cookies(\`https://\${baseHost}\`);
+        const cookies = raw.map((c) => ({ name: c.name, value: c.value }));
+        return new BatchExecuteClient({ cookies, baseHost, hl: CONFIG.uiLocale });`);
+  await writeFile(target,patched,'utf8');
+  console.log('Applied NotebookLM account-resolved RPC host patch.');
+}
