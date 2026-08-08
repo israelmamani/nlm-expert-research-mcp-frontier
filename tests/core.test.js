@@ -12,6 +12,8 @@ import {AutomaticAuthRecovery, AutomaticAuthRecoveryError, isAuthenticationError
 import {reportToolProgress, withToolProgress} from '../dist/progress.js';
 import {createTextSourceWithRemoteConfirmation} from '../dist/source-reconciliation.js';
 import {TransportCircuitBreaker} from '../dist/transport-circuit-breaker.js';
+import {isTransportTimeout,runWithSingleTransportRecovery,withAbsoluteDeadline} from '../dist/transport-recovery.js';
+import {processTreeKillArgs,upstreamCallOptions,UpstreamNotebookLmAdapter} from '../dist/upstream-adapter.js';
 
 async function fixture(){const dir=await mkdtemp(join(tmpdir(),'nlm-frontier-'));const store=new Store(join(dir,'registry.json'));const adapter=new MockNotebookAdapter();const registry=new NotebookRegistry(store,adapter,0);return {dir,store,adapter,registry,engine:new ResearchEngine(registry,adapter,store)};}
 test('cache miss performs live discovery without restart',async()=>{const f=await fixture();await f.registry.sync();f.adapter.addNotebook({id:'nb-new',title:'Nuevo Notebook',aliases:[]},[{id:'src-new',notebookId:'nb-new',title:'Nuevo documento'}]);const n=await f.registry.resolve('Nuevo Notebook');assert.equal(n.id,'nb-new');await f.registry.refresh(n.id);assert.equal((await f.registry.sources(n.id)).length,1);await rm(f.dir,{recursive:true,force:true});});
@@ -33,9 +35,83 @@ test('multiple citations stay attached to their material claims',()=>{const supp
 test('citation from another answer pass cannot leak into a primary claim',()=>{const support=[{evidenceId:'e1',sourceTitle:'Other pass',quote:'FRONTIER-CODE-7319 is the exact certification code.',citationMarker:'[1]',excerptAvailable:true,answerPass:1,layer:'CANONICAL_CORPUS',status:'UNVERIFIED'}];const [claim]=claimify('FRONTIER-CODE-7319 is the exact certification code [1].',support,[]);assert.deepEqual(claim.evidenceIds,[]);assert.equal(claim.status,'UNVERIFIED');});
 test('transport circuit breaker trips after three bounded stalls and healthy success resets it',()=>{let now=0;const breaker=new TransportCircuitBreaker(3,600000,()=>now);breaker.recordStall();breaker.recordStall();assert.equal(breaker.degraded,false);breaker.recordStall();assert.equal(breaker.degraded,true);breaker.recordHealthy();assert.equal(breaker.degraded,false);now=700000;assert.equal(breaker.count,0);});
 
+test('safe read restarts once, probes the fresh transport and returns the retry result',async()=>{
+  let attempts=0;let restarts=0;let probes=0;const events=[];
+  const result=await runWithSingleTransportRecovery({name:'notebook_list',circuit:new TransportCircuitBreaker(),execute:async()=>{attempts++;if(attempts===1)throw new Error('Request timed out');return ['ready'];},restart:async()=>{restarts++;},probe:async()=>{probes++;},onEvent:event=>events.push(event)});
+  assert.deepEqual(result,['ready']);assert.equal(attempts,2);assert.equal(restarts,1);assert.equal(probes,1);assert.equal(events.filter(event=>event==='recovered').length,1);
+});
+
+test('a second transport stall fails unstable without a third attempt',async()=>{
+  let attempts=0;let restarts=0;
+  await assert.rejects(()=>runWithSingleTransportRecovery({name:'content_list',circuit:new TransportCircuitBreaker(),execute:async()=>{attempts++;throw new Error('absolute deadline exceeded');},restart:async()=>{restarts++;},probe:async()=>undefined}),/UPSTREAM_TRANSPORT_UNSTABLE/);
+  assert.equal(attempts,2);assert.equal(restarts,2);
+});
+
+test('progress cannot extend the configured absolute upstream deadline',async()=>{
+  const options=upstreamCallOptions('notebook_list');
+  assert.equal(options.timeout,60000);assert.equal(options.resetTimeoutOnProgress,false);
+  let progress=0;const ticker=setInterval(()=>{progress++;},2);
+  try{await assert.rejects(()=>withAbsoluteDeadline('notebook_list',25,()=>new Promise(()=>undefined)),/UPSTREAM_ABSOLUTE_DEADLINE_EXCEEDED/);}
+  finally{clearInterval(ticker);}
+  assert.ok(progress>1);
+});
+
+test('authentication errors and rate limits never enter transport restart recovery',async()=>{
+  for(const error of [new Error('AUTH_REQUIRED'),new Error('429 rate limit exceeded')]){
+    let restarts=0;
+    await assert.rejects(()=>runWithSingleTransportRecovery({name:'notebook_list',circuit:new TransportCircuitBreaker(),execute:async()=>{throw error;},restart:async()=>{restarts++;}}),candidate=>candidate===error);
+    assert.equal(restarts,0);
+  }
+  assert.equal(isTransportTimeout(new Error('429 timeout quota exceeded')),false);
+});
+
+test('uncertain mutation is cleaned up but never repeated by transport recovery',async()=>{
+  let attempts=0;let restarts=0;let probes=0;
+  await assert.rejects(()=>runWithSingleTransportRecovery({name:'source_add',circuit:new TransportCircuitBreaker(),execute:async()=>{attempts++;throw new Error('Request timed out');},restart:async()=>{restarts++;},probe:async()=>{probes++;}}),/UPSTREAM_OPERATION_TIMEOUT/);
+  assert.equal(attempts,1);assert.equal(restarts,1);assert.equal(probes,0);
+});
+
+test('notebook creation timeout reconciles the remote result without repeating creation',async()=>{
+  const adapter=new UpstreamNotebookLmAdapter();let reads=0;let mutations=0;
+  adapter.listNotebooks=async()=>{reads++;return reads===1?[]:[{id:'nb-created',title:'FRONTIER-CERT-TEST',url:'https://notebook.google.com/notebook/nb-created',aliases:[]}];};
+  adapter.call=async()=>{mutations++;throw new Error('UPSTREAM_OPERATION_TIMEOUT: notebook_create');};
+  const notebook=await adapter.createNotebook('FRONTIER-CERT-TEST');
+  assert.equal(notebook.id,'nb-created');assert.equal(mutations,1);
+});
+
+test('notebook deletion timeout reconciles absence without repeating deletion',async()=>{
+  const adapter=new UpstreamNotebookLmAdapter();let mutations=0;
+  adapter.listNotebooks=async()=>[];
+  adapter.call=async()=>{mutations++;throw new Error('UPSTREAM_OPERATION_TIMEOUT: notebook_delete');};
+  const result=await adapter.deleteNotebooks(['nb-deleted']);
+  assert.equal(result.reconciled,true);assert.equal(mutations,1);
+});
+
+test('third confirmed stall still allows its one authorized recovery then opens the circuit',async()=>{
+  const circuit=new TransportCircuitBreaker();circuit.recordStall();circuit.recordStall();let attempts=0;
+  const result=await runWithSingleTransportRecovery({name:'notebook_ask',circuit,execute:async()=>{attempts++;if(attempts===1)throw new Error('Request timed out');return 'recovered';},restart:async()=>undefined,probe:async()=>undefined});
+  assert.equal(result,'recovered');assert.equal(circuit.degraded,true);
+  await assert.rejects(()=>runWithSingleTransportRecovery({name:'notebook_ask',circuit,execute:async()=>'',restart:async()=>undefined}),/UPSTREAM_TRANSPORT_UNSTABLE/);
+});
+
+test('Windows cleanup targets only the exact Frontier parent process tree',()=>{
+  assert.deepEqual(processTreeKillArgs(7319),['/PID','7319','/T','/F']);
+});
+
+test('adapter shutdown closes its transport and hide watcher without touching unrelated processes',async()=>{
+  const adapter=new UpstreamNotebookLmAdapter();let transportClosed=0;let watcherKilled=0;let unrelatedChromeKilled=0;
+  adapter.transport={pid:undefined,close:async()=>{transportClosed++;}};
+  adapter.client={};
+  adapter.hideWatcher={pid:undefined,killed:false,kill:()=>{watcherKilled++;return true;}};
+  await adapter.shutdown();
+  assert.equal(transportClosed,1);assert.equal(watcherKilled,1);assert.equal(unrelatedChromeKilled,0);
+  assert.equal(adapter.transport,undefined);assert.equal(adapter.hideWatcher,undefined);
+});
+
 test('text source RPC confirmation uses the returned remote source id',async()=>{let creates=0;const source={id:'src-1',notebookId:'nb-1',title:'Remote title'};const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {sourceId:'src-1'};},list:async()=>[source],sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'REMOTE_CONFIRMED');assert.equal(result.source.id,'src-1');assert.equal(creates,1);});
 test('text source reconciliation accepts delayed remote visibility',async()=>{let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>({}),list:async()=>{reads++;return reads<3?[]:[{id:'src-1',notebookId:'nb-1',title:'Copied text'}];},sleep:async()=>undefined,delaysMs:[0,0,0]});assert.equal(result.source.id,'src-1');assert.equal(result.state,'REMOTE_CONFIRMED');});
 test('text source recovers a known upstream DOM false negative from remote state',async()=>{let creates=0;let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('Source not found after upload - dialog closed but source not visible in list');},list:async()=>{reads++;return reads===1?[]:[{id:'src-1',notebookId:'nb-1',title:'Copied text'}];},sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'UPSTREAM_FALSE_NEGATIVE_RECOVERED');assert.equal(creates,1);});
+test('text source timeout reconciles remote state without repeating source_add',async()=>{let creates=0;let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('UPSTREAM_OPERATION_TIMEOUT: source_add');},list:async()=>{reads++;return reads===1?[]:[{id:'src-1',notebookId:'nb-1',title:'Requested title'}];},sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'UPSTREAM_FALSE_NEGATIVE_RECOVERED');assert.equal(creates,1);});
 test('text source never retries creation after an uncertain result',async()=>{let creates=0;await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('uncertain RPC response');},list:async()=>[],sleep:async()=>undefined,delaysMs:[0,0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);assert.equal(creates,1);});
 test('text source reports a bounded timeout when remote state never appears',async()=>{let creates=0;let waits=0;await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {};},list:async()=>[],sleep:async()=>{waits++;},delaysMs:[0,0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);assert.equal(creates,1);assert.equal(waits,2);});
 test('text source rejects a source observed in a different notebook',async()=>{await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>({sourceId:'src-other'}),list:async()=>[{id:'src-other',notebookId:'nb-2',title:'Requested title'}],sleep:async()=>undefined,delaysMs:[0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);});
