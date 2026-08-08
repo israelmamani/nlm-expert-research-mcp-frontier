@@ -2,9 +2,9 @@
 
 Generated from `docs/certification.json`.
 
-- Certified code SHA: `728cad207b0975f49413044147d2d4c8dd59f43b`
-- Attestation commit: `ccf6774dc13fe0dc2e9320250c096f7bcb857d1f`
-- Timestamp: 2026-08-08T19:36:02.814Z
+- Certified code SHA: `75b39515dd0a056b489600cc8afcee78652279a7`
+- Attestation commit: `75b39515dd0a056b489600cc8afcee78652279a7`
+- Timestamp: 2026-08-08T20:10:49.211Z
 - Verdict: **RELEASE_BLOCKED**
 
 ## Local gates
@@ -17,16 +17,16 @@ Generated from `docs/certification.json`.
 
 ## Live gates
 
-- auth: **PASS**
-- persistence: **PASS**
-- enumeration: **PASS**
-- grounded_query: **PASS**
-- citations: **PASS**
-- dynamic_notebook: **PASS**
-- dynamic_source: **PASS**
-- delete_invalidation: **PASS**
+- auth: **NOT_RUN**
+- persistence: **NOT_RUN**
+- enumeration: **NOT_RUN**
+- grounded_query: **NOT_RUN**
+- citations: **NOT_RUN**
+- dynamic_notebook: **NOT_RUN**
+- dynamic_source: **NOT_RUN**
+- delete_invalidation: **NOT_RUN**
 - rename: **NOT_RUN**
-- locked_engine: **FAIL**
+- locked_engine: **BLOCKED**
 
 ## Claude Desktop
 
@@ -39,6 +39,14 @@ Generated from `docs/certification.json`.
 ## Blocking gates
 
 - `live.locked_engine`
+- `live.auth`
+- `live.persistence`
+- `live.enumeration`
+- `live.grounded_query`
+- `live.citations`
+- `live.dynamic_notebook`
+- `live.dynamic_source`
+- `live.delete_invalidation`
 - `claude_desktop.mcpb`
 - `claude_desktop.tools`
 - `claude_desktop.natural_invocation`
@@ -49,4 +57,4 @@ MCPB SHA-256: `NOT_BUILT`
 
 ## Open P1
 
-- `live.locked_engine.claim_evidence_linkage`: The live LOCKED capsule returned cited evidence but no claim-to-evidence link in two full certification runs; an isolated retry passed.
+- `live.locked_engine.notebooklm_transport`: The deterministic live candidate could not create its disposable notebook after three empty notebook listings; upstream UI navigation timed out at `page.waitForURL`.
