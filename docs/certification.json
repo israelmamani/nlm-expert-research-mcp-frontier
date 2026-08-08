@@ -1,9 +1,10 @@
 {
   "schema_version": "1.0",
   "product": "nlm-expert-research-mcp-frontier",
+  "certified_code_sha": "cfaa6d7aa595db4d19975f7192119cedb61402a6",
   "certified_subject_sha": "cfaa6d7aa595db4d19975f7192119cedb61402a6",
-  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
-  "timestamp": "2026-08-08T17:52:57.445Z",
+  "attestation_commit_sha": "3748d6090b927a0ab94360045564f6f87c77a529",
+  "timestamp": "2026-08-08T18:00:11.714Z",
   "environment": {
     "platform": "win32",
     "node": "v26.3.1"
@@ -37,6 +38,19 @@
     "same_session_discovery": "NOT_RUN",
     "browser_invisible": "NOT_RUN"
   },
+  "blocking_gates": [
+    "live.auth",
+    "live.persistence",
+    "live.enumeration",
+    "live.grounded_query",
+    "live.citations",
+    "live.dynamic_notebook",
+    "live.dynamic_source",
+    "claude_desktop.mcpb",
+    "claude_desktop.natural_invocation",
+    "claude_desktop.same_session_discovery",
+    "claude_desktop.browser_invisible"
+  ],
   "mcpb_sha256": "0532BEE7A5966EBAF744C9D2A6351B5151A0A414481B32B9FFFD2AB5A522D50C",
   "open_p0": [],
   "open_p1": [],
