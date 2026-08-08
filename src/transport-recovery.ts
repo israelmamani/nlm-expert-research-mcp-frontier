@@ -23,7 +23,8 @@ const RECOVERABLE_OPERATIONS=new Set(['server_health','notebook_list','content_l
 export function isRecoverableTransportOperation(name:string){return RECOVERABLE_OPERATIONS.has(name);}
 
 export function isTransportTimeout(error:unknown){
-  const message=error instanceof Error?`${error.name}: ${error.message}`:String(error);
+  const raw=error instanceof Error?`${error.name}: ${error.message}`:String(error);
+  const message=raw.replace(/[_-]+/g,' ');
   return /request timed out|timed out|timeout|absolute deadline|deadline exceeded|ECONNRESET|EPIPE|transport (?:closed|disconnected)|connection closed/i.test(message)
     && !/rate.?limit|too many requests|\b429\b|quota/i.test(message);
 }

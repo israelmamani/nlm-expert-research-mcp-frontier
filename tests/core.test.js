@@ -63,6 +63,7 @@ test('authentication errors and rate limits never enter transport restart recove
     assert.equal(restarts,0);
   }
   assert.equal(isTransportTimeout(new Error('429 timeout quota exceeded')),false);
+  assert.equal(isTransportTimeout(new Error('UPSTREAM_ABSOLUTE_DEADLINE_EXCEEDED: content_list exceeded 90000ms')),true);
 });
 
 test('uncertain mutation is cleaned up but never repeated by transport recovery',async()=>{
