@@ -7,6 +7,7 @@ import type {AdapterAnswer, Citation, Notebook, NotebookAdapter, Source} from '.
 import {log} from './log.js';
 import {AutomaticAuthRecovery, AutomaticAuthRecoveryError} from './auth-recovery.js';
 import {reportToolProgress} from './progress.js';
+import {createTextSourceWithRemoteConfirmation} from './source-reconciliation.js';
 
 type Json=Record<string,any>;
 
@@ -36,7 +37,19 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
   async refresh(){await this.listNotebooks();}
   async shutdown(){await this.transport?.close().catch(()=>undefined);this.transport=undefined;this.client=undefined;if(this.hideWatcher&&!this.hideWatcher.killed)this.hideWatcher.kill();this.hideWatcher=undefined;}
   async createNotebook(name:string):Promise<Notebook>{const value=await this.call('notebook_create',{name});const data=value.data??value;const id=String(data.notebook_id??data.id??'');if(!id)throw new Error('Upstream did not return the created notebook ID');const url=String(data.notebook_url??`https://notebook.google.com/notebook/${id}`);this.notebookUrls.set(id,url);return {id,title:String(data.actual_name??name),url,aliases:[]};}
-  async addTextSource(notebookId:string,title:string,text:string){return this.call('source_add',{source_type:'text',title,text,notebook_url:this.urlFor(notebookId)});}
+  async addTextSource(notebookId:string,title:string,text:string){
+    const confirmed=await createTextSourceWithRemoteConfirmation({
+      notebookId,title,
+      create:async()=>{
+        const value=await this.call('source_add',{source_type:'text',title,text,notebook_url:this.urlFor(notebookId)});
+        const data=value.data??value;
+        return {sourceId:typeof data.sourceId==='string'?data.sourceId:undefined,sourceName:typeof data.sourceName==='string'?data.sourceName:undefined};
+      },
+      list:async()=>await this.listSources(notebookId),
+    });
+    log('info','source.remote_confirmed',{notebookIdSuffix:notebookId.slice(-8),sourceIdSuffix:confirmed.source.id.slice(-8),state:confirmed.state});
+    return confirmed;
+  }
   async deleteNotebooks(notebookIds:string[]){return this.call('notebook_delete',{notebook_ids:notebookIds});}
   private async askRaw(url:string,question:string,sourceFormat:string){return this.call('notebook_ask',{question,notebook_url:url,source_format:sourceFormat});}
   private async ensure(){if(this.client)return;this.client=new Client({name:'frontier-upstream-client',version:'0.1.0'});this.transport=new StdioClientTransport({command:process.execPath,args:[this.entry],cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stderr:process.env.NLM_UPSTREAM_DEBUG==='1'?'inherit':'pipe'});await this.client.connect(this.transport);this.startHideWatcher();log('info','upstream.connected',{name:this.name,browser:process.platform==='win32'&&process.env.NLM_HIDE_BROWSER!=='0'?'headful-hidden':'headful-visible'});}

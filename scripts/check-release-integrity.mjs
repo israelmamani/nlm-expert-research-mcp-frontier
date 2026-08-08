@@ -24,10 +24,12 @@ const targets={
   tools:'node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js',
   runtime:'node_modules/@roomi-fields/notebooklm-mcp/dist/session/shared-context-manager.js',
   auth:'node_modules/@roomi-fields/notebooklm-mcp/dist/session/browser-session.js',
+  content:'node_modules/@roomi-fields/notebooklm-mcp/dist/content/content-manager.js',
 };
 for(const [name,path] of Object.entries(targets))if(!existsSync(path))throw new Error(`Missing upstream patch target: ${name}`);
-const [tools,runtime,auth]=await Promise.all(Object.values(targets).map(path=>readFile(path,'utf8')));
+const [tools,runtime,auth,content]=await Promise.all(Object.values(targets).map(path=>readFile(path,'utf8')));
 if(!tools.includes('notebook(?:lm)?\\.google\\.com'))throw new Error('Upstream host compatibility patch is absent');
 if(!runtime.includes("'--start-minimized'"))throw new Error('Upstream minimized-browser patch is absent');
 if(!auth.includes('FRONTIER_EXTERNAL_AUTH_RECOVERY'))throw new Error('Upstream external-auth patch is absent');
+if(!content.includes('FRONTIER_TEXT_UPLOAD_DIALOG_SETTLE'))throw new Error('Upstream text-upload race patch is absent');
 console.log('Release integrity checks passed.');

@@ -2,11 +2,12 @@
   "package": "@roomi-fields/notebooklm-mcp",
   "version": "3.0.1",
   "lock_integrity": "sha512-zZEMqQwsKt7LFXyNYoxlcqsqv3nxKUQhbnb56Xc1ZeSBMlJ0Gnk+lUW7flX2cjPfcOPJIbUhNu9+6DIbsOSSYQ==",
-  "frontier_patch_version": "2026-08-08.1",
+  "frontier_patch_version": "2026-08-08.2",
   "targets": {
     "tools": "dist/tools/index.js",
     "runtime": "dist/session/shared-context-manager.js",
-    "auth": "dist/session/browser-session.js"
+    "auth": "dist/session/browser-session.js",
+    "content": "dist/content/content-manager.js"
   },
-  "note": "The lock integrity identifies the unmodified upstream tarball; check-release-integrity verifies the three postinstall anchors after patching."
+  "note": "The lock integrity identifies the unmodified upstream tarball; check-release-integrity verifies the four postinstall anchors after patching."
 }
