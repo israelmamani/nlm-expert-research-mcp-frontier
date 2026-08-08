@@ -9,8 +9,8 @@ export class NotebookRegistry {
   async sync(force=false) {
     if (!force && Date.now()-this.lastSync<this.ttlMs) return;
     const data=await this.store.load(); const remote=await this.adapter.listNotebooks();
-    data.notebooks=remote.map(n=>({...n,aliases:[...new Set([...(n.aliases??[]),normalize(n.title)])]}));
-    for (const n of remote) await this.updateSources(data,n);
+    const prior=new Map(data.notebooks.map(n=>[n.id,n]));
+    data.notebooks=remote.map(n=>({...prior.get(n.id),...n,aliases:[...new Set([...(prior.get(n.id)?.aliases??[]),...(n.aliases??[]),normalize(n.title)])]}));
     data.passports=data.notebooks.map(n=>passport(n,data.sources.filter(s=>s.notebookId===n.id)));
     await this.store.save(data); this.lastSync=Date.now(); log('info','notebook.sync',{count:remote.length});
   }
@@ -19,7 +19,7 @@ export class NotebookRegistry {
     if (!found) { log('info','notebook.cache_miss',{input}); await this.sync(true); data=await this.store.load(); found=find(data.notebooks,input); }
     if (!found) throw new Error(`NOTEBOOK_NOT_FOUND: ${input}`); return found;
   }
-  async refresh(notebookId?:string) { await this.sync(true); if(notebookId){const d=await this.store.load(); const n=d.notebooks.find(x=>x.id===notebookId);if(n){await this.updateSources(d,n);await this.store.save(d);}} }
+  async refresh(notebookId?:string) { await this.sync(true); if(notebookId){const d=await this.store.load(); const n=d.notebooks.find(x=>x.id===notebookId);if(n){await this.updateSources(d,n);d.passports=d.notebooks.map(x=>passport(x,d.sources.filter(s=>s.notebookId===x.id)));await this.store.save(d);}} }
   async sources(id:string){const d=await this.store.load();return d.sources.filter(s=>s.notebookId===id);}
   private async updateSources(data:Awaited<ReturnType<Store['load']>>, n:Notebook){const incoming=await this.adapter.listSources(n.id);data.sources=data.sources.filter(s=>s.notebookId!==n.id).concat(incoming);n.sourceCount=incoming.length;}
 }

@@ -4,7 +4,7 @@ MCP para Claude Desktop que trata cada notebook como un corpus cerrado, conserva
 
 ## Estado honesto
 
-La rama de cierre incorpora un adaptador real `NotebookLmBrowserAdapter` basado en Playwright, perfil persistente y selectores resistentes. Requiere login Google manual y validación live contra la cuenta/instalación de NotebookLM del usuario; ningún gate live se reporta como PASS desde mocks.
+La rama de cierre usa por defecto `UpstreamNotebookLmAdapter`, que consume por stdio el transporte live de `@roomi-fields/notebooklm-mcp` 3.0.1 (Patchright, perfil persistente, RPC con fallback DOM). `NotebookLmBrowserAdapter` queda como fallback experimental propio y `NLM_ADAPTER=mock` solo para tests. Consulte `THIRD_PARTY_NOTICES.md`.
 
 ## Desarrollo
 
@@ -12,14 +12,15 @@ La rama de cierre incorpora un adaptador real `NotebookLmBrowserAdapter` basado 
 npm install
 npm test
 npm run doctor
+npm run setup-auth -- --force
 npm run package:mcpb
 ```
 
-El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas.
+El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas. Google revoca la sesión de esta cuenta al automatizar Chrome headless, por lo que producción usa Chrome real minimizado con perfil persistente; `setup_auth` permite autenticar o forzar reautenticación desde MCP.
 
 ## Herramientas MCP
 
-`research`, `notebook_resolve`, `notebook_refresh`, `get_evidence`, `compare_notebooks`, `doctor`.
+`research`, `notebook_resolve`, `notebook_refresh`, `get_evidence`, `compare_notebooks`, `setup_auth`, `doctor`.
 
 ## Documentación
 

@@ -1,0 +1,43 @@
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
+import {fileURLToPath} from 'node:url';
+import {join, resolve} from 'node:path';
+import {spawn} from 'node:child_process';
+import type {AdapterAnswer, Citation, Notebook, NotebookAdapter, Source} from './types.js';
+import {log} from './log.js';
+
+type Json=Record<string,any>;
+
+/**
+ * Production transport backed by @roomi-fields/notebooklm-mcp 3.x.
+ * Frontier remains the orchestrator; the upstream MCP owns fragile Google UI/RPC/auth concerns.
+ */
+export class UpstreamNotebookLmAdapter implements NotebookAdapter {
+  name='roomi-notebooklm-mcp-3.0.1';
+  private client?:Client; private transport?:StdioClientTransport;
+  private readonly notebookUrls=new Map<string,string>();
+  private readonly dataDir=resolve(process.env.NLM_UPSTREAM_DATA_DIR??join(process.cwd(),'.data','upstream'));
+  private readonly entry=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/index.js',import.meta.url));
+  private readonly setupEntry=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/cli/setup-auth.js',import.meta.url));
+
+  async health(){try{const value=await this.call('server_health',{});const ok=value.success!==false;return {ok,state:ok?'READY':'AUTH_REQUIRED',detail:ok?`Upstream transport ready; data=${this.dataDir}`:String(value.error??'Authentication required')};}catch(e){return {ok:false,state:/auth|login/i.test(String(e))?'AUTH_REQUIRED':'TRANSPORT_UNAVAILABLE',detail:String(e)};}}
+  async authenticate(interactive=false){if(!interactive)return this.health();await this.shutdown();const args=[this.setupEntry,...(process.env.NLM_FORCE_REAUTH==='1'?['--force']:[])];const code=await new Promise<number>((done,reject)=>{const child=spawn(process.execPath,args,{cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stdio:'inherit'});child.once('error',reject);child.once('exit',c=>done(c??1));});return code===0?{ok:true,state:'READY',detail:`Upstream persistent profile: ${join(this.dataDir,'chrome_profile')}`}:{ok:false,state:'AUTH_ERROR',detail:`Upstream setup-auth exited with code ${code}`};}
+  async listNotebooks():Promise<Notebook[]>{let last:Notebook[]=[];for(let attempt=1;attempt<=3;attempt++){const value=await this.call('notebook_list',{});const rows=value.data?.notebooks??value.notebooks??[];last=rows.map((n:Json)=>{const id=String(n.id);const url=String(n.url??`https://notebook.google.com/notebook/${id}`);this.notebookUrls.set(id,url);return {id,title:String(n.name??n.title??n.id),url,aliases:[]};});if(last.length||attempt===3)return last;log('warn','upstream.empty_notebook_list_retry',{attempt});await this.shutdown();await delay(1500*attempt);}return last;}
+  async listSources(notebookId:string):Promise<Source[]>{const value=await this.withUrlFallback(notebookId,url=>this.call('content_list',{notebook_url:url}));const rows=value.data?.sources??value.sources??[];return rows.map((source:Json,i:number)=>({id:String(source.id??`${notebookId}-source-${i+1}`),notebookId,title:String(source.name??source.title??`Source ${i+1}`),fingerprint:undefined}));}
+  async ask(notebookId:string,query:string):Promise<AdapterAnswer>{const result=await this.withUrlFallback(notebookId,url=>this.askRaw(url,query,'json'));const data=result.data??result;const citations=readCitations(result);return {text:String(data.answer??data.text??''),citations,sourceIds:citations.map(c=>c.sourceId).filter(Boolean) as string[]};}
+  async refresh(){await this.listNotebooks();}
+  async shutdown(){await this.transport?.close().catch(()=>undefined);this.transport=undefined;this.client=undefined;}
+  async createNotebook(name:string):Promise<Notebook>{const value=await this.call('notebook_create',{name});const data=value.data??value;const id=String(data.notebook_id??data.id??'');if(!id)throw new Error('Upstream did not return the created notebook ID');const url=String(data.notebook_url??`https://notebook.google.com/notebook/${id}`);this.notebookUrls.set(id,url);return {id,title:String(data.actual_name??name),url,aliases:[]};}
+  async addTextSource(notebookId:string,title:string,text:string){return this.call('source_add',{source_type:'text',title,text,notebook_url:this.urlFor(notebookId)});}
+  async deleteNotebooks(notebookIds:string[]){return this.call('notebook_delete',{notebook_ids:notebookIds});}
+  private async askRaw(url:string,question:string,sourceFormat:string){return this.call('notebook_ask',{question,notebook_url:url,source_format:sourceFormat});}
+  private async ensure(){if(this.client)return;this.client=new Client({name:'frontier-upstream-client',version:'0.1.0'});this.transport=new StdioClientTransport({command:process.execPath,args:[this.entry],cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stderr:process.env.NLM_UPSTREAM_DEBUG==='1'?'inherit':'pipe'});await this.client.connect(this.transport);log('info','upstream.connected',{name:this.name});}
+  private async call(name:string,args:Json){await this.ensure();const result=await this.client!.callTool({name,arguments:args},undefined,{timeout:240000,resetTimeoutOnProgress:true});const value=parseResult(result as Json);if(value.success===false)throw new Error(String(value.error??`${name} failed`));return value;}
+  private urlFor(notebookId:string){return this.notebookUrls.get(notebookId)??`https://notebook.google.com/notebook/${notebookId}`;}
+  private async withUrlFallback<T>(notebookId:string,operation:(url:string)=>Promise<T>):Promise<T>{const preferred=this.urlFor(notebookId);try{return await operation(preferred);}catch(error){if(!/session expired|accounts\.google|not authenticated|authentication failed/i.test(String(error)))throw error;const parsed=new URL(preferred);parsed.hostname=parsed.hostname==='notebook.google.com'?'notebooklm.google.com':'notebook.google.com';const alternate=parsed.toString();log('warn','upstream.host_fallback',{notebookId,from:new URL(preferred).hostname,to:parsed.hostname});await this.shutdown();await delay(2000);const value=await operation(alternate);this.notebookUrls.set(notebookId,alternate);return value;}}
+  private env(extra:Record<string,string>={}){const base=Object.fromEntries(Object.entries(process.env).filter((x):x is [string,string]=>typeof x[1]==='string'));return {...base,DATA_DIR:this.dataDir,NOTEBOOKLM_UI_LOCALE:'en',...extra};}
+}
+
+function parseResult(result:Json):Json{if(result.structuredContent&&typeof result.structuredContent==='object')return result.structuredContent;const text=(result.content??[]).filter((x:Json)=>x.type==='text').map((x:Json)=>x.text).join('\n').trim();if(!text)return {};try{return JSON.parse(text);}catch{return {success:true,data:{answer:text}};}}
+function readCitations(value:Json):Citation[]{const data=value.data??value;const raw=data.sources?.citations??data.citations??[];return raw.map((c:Json,i:number)=>({sourceId:c.sourceId??c.source_id,sourceTitle:String(c.sourceName??c.source_name??c.title??`Citation ${i+1}`),quote:String(c.sourceText??c.source_text??c.excerpt??c.quote??''),locator:String(c.marker??c.number??`citation:${i+1}`)}));}
+function delay(ms:number){return new Promise(resolveDelay=>setTimeout(resolveDelay,ms));}

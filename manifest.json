@@ -1,0 +1,37 @@
+{
+  "manifest_version": "0.3",
+  "name": "nlm-expert-research-mcp-frontier",
+  "display_name": "NLM Expert Research MCP — Frontier",
+  "version": "0.1.0",
+  "description": "Source-locked, evidence-first NotebookLM research with persistent authentication and structured citations.",
+  "author": {
+    "name": "NLM Expert Research MCP Contributors"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "NLM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/frontier",
+        "NLM_UPSTREAM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/upstream"
+      }
+    }
+  },
+  "tools": [
+    {"name": "research", "description": "Research one NotebookLM corpus and return a source-locked evidence capsule."},
+    {"name": "notebook_resolve", "description": "Resolve a live notebook by title, alias, ID, or URL."},
+    {"name": "notebook_refresh", "description": "Refresh notebooks and optionally a notebook's sources."},
+    {"name": "get_evidence", "description": "Retrieve evidence from a prior research capsule."},
+    {"name": "compare_notebooks", "description": "Compare two notebooks while preserving provenance."},
+    {"name": "setup_auth", "description": "Open Chrome for secure Google authentication or forced reauthentication."},
+    {"name": "doctor", "description": "Inspect runtime, transport, registry, and security state."}
+  ],
+  "license": "MIT",
+  "privacy_policies": ["https://policies.google.com/privacy"],
+  "compatibility": {
+    "platforms": ["win32"],
+    "runtimes": {"node": ">=20"}
+  }
+}
