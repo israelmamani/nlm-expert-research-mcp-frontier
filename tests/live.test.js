@@ -53,8 +53,8 @@ test('LIVE controlled notebook lifecycle, locked engine and soak',{skip:!process
       const capsule=await engine.run({query:CERT_QUERY,notebook:created.id,mode:'INSTANT',internetPolicy:'LOCKED'});
       targetedLatencies.push(Date.now()-started);
       assert.equal(capsule.corpusPolicy,'LOCKED');assert.equal(capsule.internetPolicy,'LOCKED');assert.equal(capsule.externalEvidence.length,0);
-      assert.match(capsule.answer,/FRONTIER-CODE-7319/i);assert.match(capsule.answer,/cobalt|azul cobalto/i);assert.match(capsule.answer,/condor|condor/i);
-      const material=capsule.claims.filter(claim=>/7319|cobalt|cobalto|condor/i.test(claim.text));
+      assert.match(capsule.answer,/FRONTIER-CODE-7319/i);assert.match(capsule.answer,/cobalt|azul cobalto/i);assert.match(capsule.answer,/c[oó]ndor/i);
+      const material=capsule.claims.filter(claim=>/7319|cobalt|cobalto|c[oó]ndor/i.test(claim.text));
       assert.ok(material.length>0,'No deterministic material claim was produced');
       assert.ok(material.some(claim=>claim.evidenceIds.length>0),'No deterministic claim linked to a citation');
       assert.ok(material.every(claim=>claim.evidenceIds.every(id=>capsule.evidence.some(evidence=>evidence.evidenceId===id&&evidence.answerPass===0))),'Wrong-pass citation assignment');
@@ -80,7 +80,7 @@ test('LIVE controlled notebook lifecycle, locked engine and soak',{skip:!process
 });
 
 function assertDeterministicAnswer(answer){
-  assert.match(answer.text,/FRONTIER-CODE-7319/i);assert.match(answer.text,/cobalt|azul cobalto/i);assert.match(answer.text,/condor/i);
+  assert.match(answer.text,/FRONTIER-CODE-7319/i);assert.match(answer.text,/cobalt|azul cobalto/i);assert.match(answer.text,/c[oó]ndor/i);
   assert.ok(answer.citations.length>0,'NotebookLM returned no structured citations');
   assert.ok(answer.citations.every(citation=>citation.sourceId),'RPC citation omitted authoritative sourceId');
   assert.ok(answer.citations.every(citation=>citation.sourceTitle),'RPC citation omitted source title');
