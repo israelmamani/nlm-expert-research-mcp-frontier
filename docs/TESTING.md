@@ -1,3 +1,3 @@
 # Testing
 
-`npm test` ejecuta unit/integration-style tests sobre mocks: cache miss, rename/delete, evidence capsule y aislamiento. No se etiquetan como live E2E. Live NotebookLM, auth persistence, Claude Desktop, MCPB install y stress de servicio requieren credenciales, UI y entorno externo.
+`npm test` ejecuta tests locales deterministas: cache miss, rename/delete, evidence capsule, aislamiento, gate de internet, recuperación atómica y 100 investigaciones secuenciales. `npm run test:live` solo se habilita con `NLM_LIVE_TEST=1`; exige sesión real y no convierte mocks en live. Live NotebookLM, auth persistence, Claude Desktop y MCPB install requieren interacción externa.

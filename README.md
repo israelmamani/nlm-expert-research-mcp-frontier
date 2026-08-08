@@ -4,7 +4,7 @@ MCP para Claude Desktop que trata cada notebook como un corpus cerrado, conserva
 
 ## Estado honesto
 
-La versión `0.1.0` es un release candidate de software con adaptador local determinista y contrato preparado para un transporte de navegador. El transporte real de NotebookLM requiere autenticación Google interactiva y validación contra la UI actual; no se reporta como live E2E hasta ejecutar esa validación en la máquina del usuario.
+La rama de cierre incorpora un adaptador real `NotebookLmBrowserAdapter` basado en Playwright, perfil persistente y selectores resistentes. Requiere login Google manual y validación live contra la cuenta/instalación de NotebookLM del usuario; ningún gate live se reporta como PASS desde mocks.
 
 ## Desarrollo
 
@@ -15,7 +15,7 @@ npm run doctor
 npm run package:mcpb
 ```
 
-El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador local se selecciona por defecto. `NLM_ADAPTER=browser` falla cerrado hasta configurar el transporte real.
+El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas.
 
 ## Herramientas MCP
 

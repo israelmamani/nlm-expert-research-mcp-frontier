@@ -1,3 +1,3 @@
 # Certificación
 
-Software: `CONDITIONAL_READY`. Tests locales ejecutados: PASS. Live NotebookLM, login, dynamic live gate, source live gate, Claude Desktop y MCPB installation: NOT RUN. Por ello no se declara `AUDITED_COMPLETE` ni `PRODUCTION_READY_WITH_EXTERNAL_DEPENDENCIES`.
+Software: `RELEASE_BLOCKED` until the human-authenticated live gates pass. The real adapter is implemented and reached NotebookLM, but the current environment returned `AUTH_REQUIRED`; live enumeration, Q&A, citations, auth persistence, Claude Desktop execution and MCPB installation remain unverified. Local tests are architectural evidence only.
