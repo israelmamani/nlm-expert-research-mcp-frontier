@@ -4,7 +4,7 @@ Generated from `docs/certification.json`.
 
 - Certified code SHA: `503be3110693e03069879bbb881e59ec563da480`
 - Attestation commit: `5c6937b2409aeebe53b9922906e0c7502e9b53d9`
-- Timestamp: 2026-08-08T18:11:16.704Z
+- Timestamp: 2026-08-08T18:33:56.768Z
 - Verdict: **RELEASE_BLOCKED**
 
 ## Local gates
@@ -17,13 +17,13 @@ Generated from `docs/certification.json`.
 
 ## Live gates
 
-- auth: **NOT_RUN**
-- persistence: **NOT_RUN**
-- enumeration: **NOT_RUN**
-- grounded_query: **NOT_RUN**
-- citations: **NOT_RUN**
-- dynamic_notebook: **NOT_RUN**
-- dynamic_source: **NOT_RUN**
+- auth: **PASS**
+- persistence: **PASS**
+- enumeration: **PASS**
+- grounded_query: **PASS**
+- citations: **PASS**
+- dynamic_notebook: **PASS**
+- dynamic_source: **FAIL**
 - delete_invalidation: **NOT_RUN**
 - rename: **NOT_RUN**
 
