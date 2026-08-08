@@ -17,6 +17,9 @@ if(certification.verdict==='RELEASE_CERTIFIED'&&certification.blocking_gates?.le
 const allowedAttestationPaths=new Set(['docs/certification.json','docs/LIVE_CERTIFICATION.md']);
 const attestationFiles=execFileSync('git',['diff','--name-only',`${certification.certified_code_sha}..${certification.attestation_commit_sha}`],{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
 if(attestationFiles.some(path=>!allowedAttestationPaths.has(path)))throw new Error(`Attestation range contains non-certification changes: ${attestationFiles.join(', ')}`);
+const head=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const postAttestationFiles=execFileSync('git',['diff','--name-only',`${certification.attestation_commit_sha}..${head}`],{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);
+if(postAttestationFiles.some(path=>!allowedAttestationPaths.has(path)))throw new Error(`Post-attestation range contains non-certification changes: ${postAttestationFiles.join(', ')}`);
 const targets={
   tools:'node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js',
   runtime:'node_modules/@roomi-fields/notebooklm-mcp/dist/session/shared-context-manager.js',
