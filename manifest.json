@@ -16,7 +16,9 @@
       "env": {
         "NLM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/frontier",
         "NLM_UPSTREAM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/upstream",
-        "NLM_HIDE_BROWSER": "1"
+        "NLM_HIDE_BROWSER": "1",
+        "NLM_AUTO_REAUTH": "1",
+        "FRONTIER_EXTERNAL_AUTH_RECOVERY": "1"
       }
     }
   },
