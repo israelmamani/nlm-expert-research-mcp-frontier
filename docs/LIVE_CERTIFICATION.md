@@ -3,8 +3,8 @@
 Generated from `docs/certification.json`.
 
 - Certified code SHA: `728cad207b0975f49413044147d2d4c8dd59f43b`
-- Attestation commit: `728cad207b0975f49413044147d2d4c8dd59f43b`
-- Timestamp: 2026-08-08T19:35:37.600Z
+- Attestation commit: `ccf6774dc13fe0dc2e9320250c096f7bcb857d1f`
+- Timestamp: 2026-08-08T19:36:02.814Z
 - Verdict: **RELEASE_BLOCKED**
 
 ## Local gates
