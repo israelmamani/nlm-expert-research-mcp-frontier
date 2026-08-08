@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "product": "nlm-expert-research-mcp-frontier",
+  "certified_subject_sha": "cfaa6d7aa595db4d19975f7192119cedb61402a6",
+  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
+  "timestamp": "2026-08-08T17:52:57.445Z",
+  "environment": {
+    "platform": "win32",
+    "node": "v26.3.1"
+  },
+  "dependencies": {
+    "mcp_sdk": "^1.30.0",
+    "upstream": "3.0.1"
+  },
+  "local_gates": {
+    "build": "PASS",
+    "tests": "PASS",
+    "integrity": "PASS",
+    "secrets": "PASS",
+    "audit": "PASS"
+  },
+  "live_gates": {
+    "auth": "NOT_RUN",
+    "persistence": "NOT_RUN",
+    "enumeration": "NOT_RUN",
+    "grounded_query": "NOT_RUN",
+    "citations": "NOT_RUN",
+    "dynamic_notebook": "NOT_RUN",
+    "dynamic_source": "NOT_RUN",
+    "delete_invalidation": "NOT_RUN",
+    "rename": "NOT_RUN"
+  },
+  "claude_desktop": {
+    "mcpb": "NOT_RUN",
+    "tools": "NOT_RUN",
+    "natural_invocation": "NOT_RUN",
+    "same_session_discovery": "NOT_RUN",
+    "browser_invisible": "NOT_RUN"
+  },
+  "mcpb_sha256": "0532BEE7A5966EBAF744C9D2A6351B5151A0A414481B32B9FFFD2AB5A522D50C",
+  "open_p0": [],
+  "open_p1": [],
+  "verdict": "RELEASE_BLOCKED"
+}
