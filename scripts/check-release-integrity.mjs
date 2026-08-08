@@ -25,10 +25,15 @@ const targets={
   runtime:'node_modules/@roomi-fields/notebooklm-mcp/dist/session/shared-context-manager.js',
   auth:'node_modules/@roomi-fields/notebooklm-mcp/dist/session/browser-session.js',
   content:'node_modules/@roomi-fields/notebooklm-mcp/dist/content/content-manager.js',
+  rpc:'node_modules/@roomi-fields/notebooklm-mcp/dist/rpc/batchexecute.js',
 };
 for(const [name,path] of Object.entries(targets))if(!existsSync(path))throw new Error(`Missing upstream patch target: ${name}`);
-const [tools,runtime,auth,content]=await Promise.all(Object.values(targets).map(path=>readFile(path,'utf8')));
+const [tools,runtime,auth,content,rpc]=await Promise.all(Object.values(targets).map(path=>readFile(path,'utf8')));
 if(!tools.includes('notebook(?:lm)?\\.google\\.com'))throw new Error('Upstream host compatibility patch is absent');
+if(!tools.includes('FRONTIER_RPC_SOURCE_LIST')||!tools.includes('frontier_sources_only'))throw new Error('Frontier RPC-only source-list patch is absent');
+if(!tools.includes('FRONTIER_RPC_CITATION_SOURCE_ID')||!tools.includes('sourceId: r.source_id'))throw new Error('Frontier RPC citation source-id patch is absent');
+if(!tools.includes('FRONTIER_RPC_MUTATION_GUARD')||!tools.includes('frontier_rpc_only'))throw new Error('Frontier RPC-only mutation guard is absent');
+if(!rpc.includes('FRONTIER_NO_MUTATION_RETRY')||!rpc.includes('FRONTIER_MUTATION_RPCS.has(name)'))throw new Error('Upstream mutation no-retry patch is absent');
 if(!runtime.includes("'--start-minimized'"))throw new Error('Upstream minimized-browser patch is absent');
 if(!auth.includes('FRONTIER_EXTERNAL_AUTH_RECOVERY'))throw new Error('Upstream external-auth patch is absent');
 if(!content.includes('FRONTIER_TEXT_UPLOAD_DIALOG_SETTLE'))throw new Error('Upstream text-upload race patch is absent');

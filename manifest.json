@@ -24,6 +24,9 @@
   },
   "tools": [
     {"name": "research", "description": "Research one NotebookLM corpus and return a source-locked evidence capsule."},
+    {"name": "list_notebooks", "description": "List live NotebookLM expert notebooks with explicit stale-catalog signaling."},
+    {"name": "list_sources", "description": "List authoritative RPC source IDs and titles for one notebook."},
+    {"name": "health", "description": "Check Frontier, authentication, and upstream transport readiness."},
     {"name": "notebook_resolve", "description": "Resolve a live notebook by title, alias, ID, or URL."},
     {"name": "notebook_refresh", "description": "Refresh notebooks and optionally a notebook's sources."},
     {"name": "get_evidence", "description": "Retrieve evidence from a prior research capsule."},

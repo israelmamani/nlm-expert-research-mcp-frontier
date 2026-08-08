@@ -5,6 +5,7 @@ const target=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp
 const runtimeTarget=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/session/shared-context-manager.js',import.meta.url));
 const authRuntimeTarget=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/session/browser-session.js',import.meta.url));
 const contentTarget=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/content/content-manager.js',import.meta.url));
+const rpcTarget=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/rpc/batchexecute.js',import.meta.url));
 const legacy="const NOTEBOOK_UUID_URL = /notebooklm\\.google\\.com\\/notebook\\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:\\b|\\/|$)/;";
 const compatible="const NOTEBOOK_UUID_URL = /notebook(?:lm)?\\.google\\.com\\/notebook\\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?:[/?#]|$)/;";
 const source=await readFile(target,'utf8');
@@ -61,4 +62,113 @@ else {
   if(!patched.includes(textUploadMarker)||patched===contentSource)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: text-upload patch could not be applied in ${contentTarget}`);
   await writeFile(contentTarget,patched,'utf8');
   console.log('Applied Frontier text-upload dialog-settle patch.');
+}
+
+const rpcSourceListMarker='FRONTIER_RPC_SOURCE_LIST';
+const latestToolsSource=await readFile(target,'utf8');
+if(latestToolsSource.includes(rpcSourceListMarker)) console.log('NotebookLM Frontier RPC-only source-list patch already applied.');
+else {
+  const definitionStart=latestToolsSource.indexOf("            name: 'list_content',");
+  const definitionEnd=latestToolsSource.indexOf("            name: 'download_content',",definitionStart);
+  if(definitionStart<0||definitionEnd<0)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: list_content definition was not found in ${target}`);
+  const definition=latestToolsSource.slice(definitionStart,definitionEnd);
+  const propertiesAnchor="                properties: {\n";
+  if(!definition.includes(propertiesAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: list_content properties anchor was not found in ${target}`);
+  const patchedDefinition=definition.replace(propertiesAnchor,propertiesAnchor+
+`                    // ${rpcSourceListMarker}: Frontier metadata reads must never poll Studio or fall back to DOM.
+                    frontier_sources_only: {
+                        type: 'boolean',
+                        description: 'Internal Frontier mode: return RPC source IDs/titles only; never use DOM fallback.',
+                    },
+`);
+
+  const handlerStart=latestToolsSource.indexOf('    async handleListContent(args) {');
+  const handlerEnd=latestToolsSource.indexOf('    async handleDownloadContent(args) {',handlerStart);
+  if(handlerStart<0||handlerEnd<0)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: list_content handler was not found in ${target}`);
+  let handler=latestToolsSource.slice(handlerStart,handlerEnd);
+  const destructureAnchor='        const { notebook_url, session_id } = args;';
+  const sourcesAnchor='                    const srcs = await new NotebookRpc(client).getSources(lcNotebookId);';
+  const rpcCatchStart=handler.indexOf('                catch (e) {',handler.indexOf(sourcesAnchor));
+  const fallbackLogStart=handler.indexOf('                    log.warning(',rpcCatchStart);
+  if(!handler.includes(destructureAnchor)||!handler.includes(sourcesAnchor)||rpcCatchStart<0||fallbackLogStart<0)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: RPC list_content anchors were not found in ${target}`);
+  handler=handler.replace(destructureAnchor,'        const { notebook_url, session_id, frontier_sources_only } = args;');
+  handler=handler.replace(sourcesAnchor,sourcesAnchor+`
+                    if (frontier_sources_only === true) {
+                        const sources = srcs.map((s) => ({ id: s.id, name: s.title, type: 'document', status: 'ready' }));
+                        log.success(\`  âœ… (RPC) Frontier source list: \${sources.length} sources\`);
+                        return { success: true, data: { sources, generatedContent: [], sourceCount: sources.length, hasAudioOverview: false, transport: 'rpc' } };
+                    }`);
+  const updatedRpcCatchStart=handler.indexOf('                catch (e) {',handler.indexOf(sourcesAnchor));
+  const updatedFallbackLogStart=handler.indexOf('                    log.warning(',updatedRpcCatchStart);
+  if(updatedRpcCatchStart<0||updatedFallbackLogStart<0)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: patched RPC fallback anchors were not found in ${target}`);
+  handler=handler.slice(0,updatedFallbackLogStart)+`                    if (frontier_sources_only === true) {
+                        const detail = e instanceof Error ? e.message : String(e);
+                        return { success: false, error: 'REMOTE_SOURCE_LIST_UNAVAILABLE: ' + detail };
+                    }
+`+handler.slice(updatedFallbackLogStart);
+  const withDefinition=latestToolsSource.slice(0,definitionStart)+patchedDefinition+latestToolsSource.slice(definitionEnd);
+  const adjustedHandlerStart=withDefinition.indexOf('    async handleListContent(args) {');
+  const adjustedHandlerEnd=withDefinition.indexOf('    async handleDownloadContent(args) {',adjustedHandlerStart);
+  const patchedTools=withDefinition.slice(0,adjustedHandlerStart)+handler+withDefinition.slice(adjustedHandlerEnd);
+  if(!patchedTools.includes(rpcSourceListMarker)||patchedTools===latestToolsSource)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: Frontier RPC source-list patch could not be applied in ${target}`);
+  await writeFile(target,patchedTools,'utf8');
+  console.log('Applied Frontier RPC-only source-list patch.');
+}
+
+const rpcCitationMarker='FRONTIER_RPC_CITATION_SOURCE_ID';
+const citationToolsSource=await readFile(target,'utf8');
+if(citationToolsSource.includes(rpcCitationMarker)) console.log('NotebookLM Frontier RPC citation source-id patch already applied.');
+else {
+  const citationAnchor=`                                number: r.citation_number,
+                                sourceText: r.cited_text || '',`;
+  if(!citationToolsSource.includes(citationAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: RPC citation mapping anchor was not found in ${target}`);
+  const patchedCitations=citationToolsSource.replace(citationAnchor,`                                number: r.citation_number,
+                                // ${rpcCitationMarker}: retain remote provenance in Frontier evidence.
+                                sourceId: r.source_id,
+                                sourceText: r.cited_text || '',`);
+  await writeFile(target,patchedCitations,'utf8');
+  console.log('Applied Frontier RPC citation source-id patch.');
+}
+
+const rpcMutationMarker='FRONTIER_RPC_MUTATION_GUARD';
+const mutationToolsSource=await readFile(target,'utf8');
+if(mutationToolsSource.includes(rpcMutationMarker)) console.log('NotebookLM Frontier RPC-only mutation guard already applied.');
+
+if(!mutationToolsSource.includes(rpcMutationMarker)) {
+  let patched=mutationToolsSource;
+  const replaceRequired=(anchor,replacement)=>{
+    if(!patched.includes(anchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: mutation guard anchor was not found in ${target}`);
+    patched=patched.replace(anchor,replacement);
+  };
+  replaceRequired(
+    '        const { source_type, file_path, url, text, title, notebook_url, session_id, show_browser } = args;',
+    `        const { source_type, file_path, url, text, title, notebook_url, session_id, show_browser, frontier_rpc_only } = args; // ${rpcMutationMarker}`,
+  );
+  replaceRequired('        const { notebook_ids, show_browser } = args;','        const { notebook_ids, show_browser, frontier_rpc_only } = args;');
+  replaceRequired('        const { name, show_browser } = args;','        const { name, show_browser, frontier_rpc_only } = args;');
+  const insertBeforeLog=(fragment,guard)=>{
+    const fragmentIndex=patched.indexOf(fragment);
+    if(fragmentIndex<0)throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: mutation log anchor was not found in ${target}`);
+    const lineStart=patched.lastIndexOf('\n',fragmentIndex)+1;
+    patched=patched.slice(0,lineStart)+guard+'\n'+patched.slice(lineStart);
+  };
+  insertBeforeLog('RPC add_source returned no id; falling back to browser flow...',"                    if (frontier_rpc_only === true) return { success: false, error: 'CREATE_NOT_CONFIRMED: RPC add_source returned no authoritative source id' };");
+  insertBeforeLog('RPC add_source failed (',"                    if (frontier_rpc_only === true) return { success: false, error: 'CREATE_NOT_CONFIRMED: RPC add_source failed: ' + (e instanceof Error ? e.message : String(e)) };");
+  insertBeforeLog('RPC delete failed (',"                if (frontier_rpc_only === true) return { success: false, error: 'DELETE_NOT_CONFIRMED: RPC delete failed: ' + (e instanceof Error ? e.message : String(e)) };");
+  insertBeforeLog('RPC create failed (',"                if (frontier_rpc_only === true) return { success: false, error: 'CREATE_NOT_CONFIRMED: RPC create failed: ' + (e instanceof Error ? e.message : String(e)) };");
+  await writeFile(target,patched,'utf8');
+  console.log('Applied Frontier RPC-only mutation guard.');
+}
+
+const noMutationRetryMarker='FRONTIER_NO_MUTATION_RETRY';
+const rpcSource=await readFile(rpcTarget,'utf8');
+if(rpcSource.includes(noMutationRetryMarker)) console.log('NotebookLM mutation no-retry patch already applied.');
+else {
+  const userAgentAnchor="const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';";
+  const driftAnchor=`            if (err instanceof RpcDriftError)\n                throw err;`;
+  if(!rpcSource.includes(userAgentAnchor)||!rpcSource.includes(driftAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: mutation retry anchors were not found in ${rpcTarget}`);
+  let patched=rpcSource.replace(userAgentAnchor,`${userAgentAnchor}\n// ${noMutationRetryMarker}: an uncertain write must be reconciled by Frontier, never replayed here.\nconst FRONTIER_MUTATION_RPCS = new Set(['CREATE_NOTEBOOK', 'DELETE_NOTEBOOK', 'RENAME_NOTEBOOK', 'ADD_SOURCE', 'ADD_SOURCE_URL_V2', 'DELETE_SOURCE']);`);
+  patched=patched.replace(driftAnchor,`${driftAnchor}\n            if (FRONTIER_MUTATION_RPCS.has(name))\n                throw err;`);
+  await writeFile(rpcTarget,patched,'utf8');
+  console.log('Applied NotebookLM mutation no-retry patch.');
 }

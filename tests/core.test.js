@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {Store} from '../dist/storage.js';
@@ -14,6 +14,8 @@ import {createTextSourceWithRemoteConfirmation} from '../dist/source-reconciliat
 import {TransportCircuitBreaker} from '../dist/transport-circuit-breaker.js';
 import {isTransportTimeout,runWithSingleTransportRecovery,withAbsoluteDeadline} from '../dist/transport-recovery.js';
 import {processTreeKillArgs,upstreamCallOptions,UpstreamNotebookLmAdapter} from '../dist/upstream-adapter.js';
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 
 async function fixture(){const dir=await mkdtemp(join(tmpdir(),'nlm-frontier-'));const store=new Store(join(dir,'registry.json'));const adapter=new MockNotebookAdapter();const registry=new NotebookRegistry(store,adapter,0);return {dir,store,adapter,registry,engine:new ResearchEngine(registry,adapter,store)};}
 test('cache miss performs live discovery without restart',async()=>{const f=await fixture();await f.registry.sync();f.adapter.addNotebook({id:'nb-new',title:'Nuevo Notebook',aliases:[]},[{id:'src-new',notebookId:'nb-new',title:'Nuevo documento'}]);const n=await f.registry.resolve('Nuevo Notebook');assert.equal(n.id,'nb-new');await f.registry.refresh(n.id);assert.equal((await f.registry.sources(n.id)).length,1);await rm(f.dir,{recursive:true,force:true});});
@@ -88,6 +90,64 @@ test('notebook deletion timeout reconciles absence without repeating deletion',a
   assert.equal(result.reconciled,true);assert.equal(mutations,1);
 });
 
+test('Frontier source enumeration requests the RPC-only path with no DOM fallback',async()=>{
+  const adapter=new UpstreamNotebookLmAdapter();let observed;
+  adapter.call=async(name,args)=>{observed={name,args};return {success:true,data:{sources:[{id:'src-rpc',name:'RPC source'}],transport:'rpc'}};};
+  const sources=await adapter.listSources('nb-rpc');
+  assert.equal(observed.name,'content_list');assert.equal(observed.args.frontier_sources_only,true);
+  assert.deepEqual(sources,[{id:'src-rpc',notebookId:'nb-rpc',title:'RPC source',fingerprint:undefined}]);
+});
+
+test('RPC source enumeration fails closed when an authoritative source id is absent',async()=>{
+  const adapter=new UpstreamNotebookLmAdapter();adapter.call=async()=>({success:true,data:{sources:[{name:'No id'}],transport:'rpc'}});
+  await assert.rejects(()=>adapter.listSources('nb-rpc'),/REMOTE_SOURCE_LIST_UNAVAILABLE/);
+});
+
+test('postinstall source-list patch returns before Studio polling and fails closed before DOM',async()=>{
+  const source=await readFile('node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js','utf8');
+  const start=source.indexOf('async handleListContent(args)');const end=source.indexOf('async handleDownloadContent(args)',start);const handler=source.slice(start,end);
+  assert.ok(handler.includes('FRONTIER')||source.includes('FRONTIER_RPC_SOURCE_LIST'));
+  assert.ok(handler.indexOf('if (frontier_sources_only === true)')<handler.indexOf('new StudioRpc(client).poll'));
+  assert.ok(handler.includes("REMOTE_SOURCE_LIST_UNAVAILABLE: "));
+  assert.ok(handler.indexOf("REMOTE_SOURCE_LIST_UNAVAILABLE: ")<handler.indexOf('// Get or create session'));
+});
+
+test('Frontier mutations are RPC-only and upstream cannot replay uncertain writes',async()=>{
+  const calls=[];const adapter=new UpstreamNotebookLmAdapter();let sourceReads=0;
+  adapter.listNotebooks=async()=>[];
+  adapter.listSources=async notebookId=>++sourceReads===1?[]:[{id:'src-new',notebookId,title:'Evidence'}];
+  adapter.call=async(name,args)=>{calls.push({name,args});if(name==='notebook_create')return {success:true,data:{notebook_id:'nb-new',notebook_url:'https://notebook.google.com/notebook/nb-new',actual_name:'Created'}};if(name==='source_add')return {success:true,data:{sourceId:'src-new',sourceName:'Evidence'}};return {success:true,data:{deleted:['nb-new'],failed:[]}};};
+  await adapter.createNotebook('Created');await adapter.addTextSource('nb-new','Evidence','deterministic');await adapter.deleteNotebooks(['nb-new']);
+  assert.deepEqual(calls.map(call=>[call.name,call.args.frontier_rpc_only]),[['notebook_create',true],['source_add',true],['notebook_delete',true]]);
+  const tools=await readFile('node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js','utf8');
+  const rpc=await readFile('node_modules/@roomi-fields/notebooklm-mcp/dist/rpc/batchexecute.js','utf8');
+  assert.match(tools,/FRONTIER_RPC_MUTATION_GUARD/);assert.match(tools,/frontier_rpc_only/);
+  assert.match(rpc,/FRONTIER_NO_MUTATION_RETRY/);assert.match(rpc,/FRONTIER_MUTATION_RPCS\.has\(name\)/);
+});
+
+test('known cached notebook remains usable as stale when remote discovery fails',async()=>{
+  const f=await fixture();await f.registry.sync();f.adapter.listNotebooks=async()=>{throw new Error('transport unavailable');};
+  const notebook=await f.registry.resolve('TIDAL','force');assert.equal(notebook.id,'nb-tidal');assert.equal(notebook.catalog_stale,true);
+  assert.equal((await f.store.load()).notebooks.length,2);await rm(f.dir,{recursive:true,force:true});
+});
+
+test('unknown notebook reports remote discovery unavailable instead of false not found',async()=>{
+  const f=await fixture();await f.registry.sync();f.adapter.listNotebooks=async()=>{throw new Error('transport unavailable');};
+  await assert.rejects(()=>f.registry.resolve('Unknown Remote Notebook','force'),/REMOTE_DISCOVERY_UNAVAILABLE/);await rm(f.dir,{recursive:true,force:true});
+});
+
+test('successful live sync clears stale catalog markers',async()=>{
+  const f=await fixture();await f.store.save({notebooks:[{id:'nb-tidal',title:'TIDAL',aliases:[],catalog_stale:true}],sources:[],passports:[],sessions:[]});
+  await f.registry.sync(true);assert.equal((await f.store.load()).notebooks.find(n=>n.id==='nb-tidal').catalog_stale,false);await rm(f.dir,{recursive:true,force:true});
+});
+
+test('runtime MCP tools stay in exact parity with the manifest product surface',async()=>{
+  const manifest=JSON.parse(await readFile('manifest.json','utf8'));const client=new Client({name:'frontier-test-client',version:'1'});
+  const transport=new StdioClientTransport({command:process.execPath,args:['dist/index.js'],cwd:process.cwd(),env:{...process.env,NLM_ADAPTER:'mock'}});
+  try{await client.connect(transport);const listed=await client.listTools();assert.deepEqual(listed.tools.map(tool=>tool.name).sort(),manifest.tools.map(tool=>tool.name).sort());assert.equal(listed.tools.length,10);}
+  finally{await client.close().catch(()=>undefined);}
+});
+
 test('third confirmed stall still allows its one authorized recovery then opens the circuit',async()=>{
   const circuit=new TransportCircuitBreaker();circuit.recordStall();circuit.recordStall();let attempts=0;
   const result=await runWithSingleTransportRecovery({name:'notebook_ask',circuit,execute:async()=>{attempts++;if(attempts===1)throw new Error('Request timed out');return 'recovered';},restart:async()=>undefined,probe:async()=>undefined});
@@ -109,13 +169,17 @@ test('adapter shutdown closes its transport and hide watcher without touching un
   assert.equal(adapter.transport,undefined);assert.equal(adapter.hideWatcher,undefined);
 });
 
-test('text source RPC confirmation uses the returned remote source id',async()=>{let creates=0;const source={id:'src-1',notebookId:'nb-1',title:'Remote title'};const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {sourceId:'src-1'};},list:async()=>[source],sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'REMOTE_CONFIRMED');assert.equal(result.source.id,'src-1');assert.equal(creates,1);});
+test('text source RPC confirmation uses the returned remote source id',async()=>{let creates=0;let reads=0;const source={id:'src-1',notebookId:'nb-1',title:'Remote title'};const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {sourceId:'src-1'};},list:async()=>++reads===1?[]:[source],sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'REMOTE_CONFIRMED');assert.equal(result.source.id,'src-1');assert.equal(creates,1);});
+test('delete reports a remotely failed notebook instead of false success',async()=>{const adapter=new UpstreamNotebookLmAdapter();adapter.call=async()=>({success:true,data:{deleted:[],failed:['nb-still-there']}});await assert.rejects(()=>adapter.deleteNotebooks(['nb-still-there']),/DELETE_NOT_CONFIRMED/);});
 test('text source reconciliation accepts delayed remote visibility',async()=>{let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>({}),list:async()=>{reads++;return reads<3?[]:[{id:'src-1',notebookId:'nb-1',title:'Copied text'}];},sleep:async()=>undefined,delaysMs:[0,0,0]});assert.equal(result.source.id,'src-1');assert.equal(result.state,'REMOTE_CONFIRMED');});
 test('text source recovers a known upstream DOM false negative from remote state',async()=>{let creates=0;let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('Source not found after upload - dialog closed but source not visible in list');},list:async()=>{reads++;return reads===1?[]:[{id:'src-1',notebookId:'nb-1',title:'Copied text'}];},sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'UPSTREAM_FALSE_NEGATIVE_RECOVERED');assert.equal(creates,1);});
 test('text source timeout reconciles remote state without repeating source_add',async()=>{let creates=0;let reads=0;const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('UPSTREAM_OPERATION_TIMEOUT: source_add');},list:async()=>{reads++;return reads===1?[]:[{id:'src-1',notebookId:'nb-1',title:'Requested title'}];},sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'UPSTREAM_FALSE_NEGATIVE_RECOVERED');assert.equal(creates,1);});
 test('text source never retries creation after an uncertain result',async()=>{let creates=0;await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('uncertain RPC response');},list:async()=>[],sleep:async()=>undefined,delaysMs:[0,0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);assert.equal(creates,1);});
 test('text source reports a bounded timeout when remote state never appears',async()=>{let creates=0;let waits=0;await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {};},list:async()=>[],sleep:async()=>{waits++;},delaysMs:[0,0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);assert.equal(creates,1);assert.equal(waits,2);});
 test('text source rejects a source observed in a different notebook',async()=>{await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>({sourceId:'src-other'}),list:async()=>[{id:'src-other',notebookId:'nb-2',title:'Requested title'}],sleep:async()=>undefined,delaysMs:[0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);});
+test('text source reconciliation never accepts a same-title source that existed before mutation',async()=>{let creates=0;const existing={id:'src-existing',notebookId:'nb-1',title:'Requested title'};await assert.rejects(()=>createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;throw new Error('uncertain timeout');},list:async()=>[existing],sleep:async()=>undefined,delaysMs:[0]}),/SOURCE_INGESTION_NOT_CONFIRMED/);assert.equal(creates,1);});
+
+test('research quality fails closed when NotebookLM returns no answer or citations',async()=>{const f=await fixture();f.adapter.ask=async()=>({text:'',citations:[]});const capsule=await f.engine.run({query:'empty',notebook:'TIDAL',mode:'INSTANT'});assert.equal(capsule.quality.status,'FAIL');assert.ok(capsule.quality.reasons.some(reason=>/No material claims|No structured citation/i.test(reason)));await rm(f.dir,{recursive:true,force:true});});
 
 test('authentication detector is narrow and recognizes upstream expiry messages',()=>{
   assert.equal(isAuthenticationError(new Error('AUTH_REQUIRED')),true);

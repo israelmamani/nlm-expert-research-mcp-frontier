@@ -16,6 +16,8 @@ jobs:
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
@@ -26,5 +28,4 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run check:integrity
       - run: npm run scan:secrets
-      - name: Validate manifest JSON
-        run: node --input-type=module -e "const m=JSON.parse(require('fs').readFileSync('manifest.json')); if(m.manifest_version !== '0.3' || !m.server?.entry_point) process.exit(1)"
+      - run: npm run check:package

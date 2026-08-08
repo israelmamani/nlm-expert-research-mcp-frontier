@@ -4,7 +4,7 @@ export type InternetPolicy = 'LOCKED'|'AUTO'|'VERIFY'|'AUGMENT'|'ULTRA';
 export type EvidenceStatus = 'SUPPORTED'|'PARTIALLY_SUPPORTED'|'AMBIGUOUS'|'CONTRADICTED'|'UNVERIFIED';
 export type CitationLinkageMethod = 'explicit_marker'|'structured_metadata'|'excerpt_match'|'fallback_match';
 
-export interface Notebook { id: string; title: string; url?: string; aliases: string[]; sourceCount?: number; updatedAt?: string; }
+export interface Notebook { id: string; title: string; url?: string; aliases: string[]; sourceCount?: number; updatedAt?: string; catalog_stale?: boolean; }
 export interface Source { id: string; notebookId: string; title: string; type?: string; fingerprint?: string; updatedAt?: string; }
 export interface Citation { sourceId?: string; sourceTitle: string; quote?: string; locator?: string; marker?: string; excerptAvailable?: boolean; }
 export interface AdapterAnswer { text: string; citations: Citation[]; sourceIds?: string[]; purpose?: 'primary'|'support'|'counter'|'forensic'; }

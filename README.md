@@ -1,28 +1,40 @@
-# NLM Expert Research MCP - Frontier
+# NLM Expert Research MCP — Frontier
 
-MCP para Claude Desktop que trata cada notebook como un corpus cerrado, conserva la procedencia de la evidencia y entrega capsulas compactas para razonar sobre fuentes verificables.
+Frontier is a Windows-first Claude Desktop MCP that researches one authenticated NotebookLM notebook at a time and returns compact, source-locked evidence capsules. Its default Internet policy is `LOCKED`; external search requires explicit opt-in and is kept separate from canonical notebook evidence.
 
-## Estado honesto
+## Release status
 
-La rama de cierre usa por defecto `UpstreamNotebookLmAdapter`, que consume por stdio el transporte live no oficial de `@roomi-fields/notebooklm-mcp` 3.0.1. `NotebookLmBrowserAdapter` queda como fallback experimental propio y `NLM_ADAPTER=mock` solo para tests. La certificacion live y Claude Desktop se registran por separado en `docs/certification.json` y `docs/LIVE_CERTIFICATION.md`.
+The published certification state is authoritative: see `docs/certification.json` and `docs/LIVE_CERTIFICATION.md`. A green local suite is not presented as live or Claude Desktop certification.
 
-## Desarrollo
+Frontier pins `@roomi-fields/notebooklm-mcp` exactly to `3.0.1` and applies reproducible postinstall patches for current host compatibility, citation/source provenance, RPC-only metadata, mutation safety, authentication ownership, and bounded browser lifecycle. NotebookLM has no official public API for these operations; upstream changes can still require a compatibility update.
+
+## Quick start
 
 ```powershell
-npm install
+npm ci
 npm test
-npm run certify:local
-npm run doctor
 npm run setup-auth -- --force
+npm run certify:live
 npm run package:mcpb
 ```
 
-El servidor stdio escribe exclusivamente JSON-RPC en stdout; logs van a stderr. El adaptador real se selecciona por defecto. `NLM_ADAPTER=mock` queda reservado para tests deterministas. La politica de Internet predeterminada es `LOCKED`: no se consulta la web externa salvo opt-in explicito. Google requiere Chrome real con perfil persistente; la ventana normal se oculta en Windows y la autenticacion permanece visible. Con `NLM_AUTO_REAUTH=1` (predeterminado), una expiracion confirmada abre una sola ventana visible de login, guarda la nueva sesion y reintenta la operacion original una vez.
+Google login, 2FA, and CAPTCHA are always completed by the user in a visible Chrome window. Normal research runs use a dedicated persistent Chrome profile and hide only Frontier-owned browser windows on Windows.
 
-## Herramientas MCP
+## Public MCP tools
 
-`research`, `notebook_resolve`, `notebook_refresh`, `get_evidence`, `compare_notebooks`, `setup_auth`, `doctor`.
+`research`, `list_notebooks`, `list_sources`, `health`, `notebook_resolve`, `notebook_refresh`, `get_evidence`, `compare_notebooks`, `setup_auth`, and `doctor`.
 
-## Documentacion
+The upstream MCP remains an internal transport; its low-level tools are not exposed to Claude. The server writes JSON-RPC only to stdout and structured logs to stderr.
 
-Consulta `docs/` para arquitectura, autenticacion, instalacion Windows, modos, privacidad, testing, limitaciones y certificacion. No se declara produccion hasta superar las compuertas live y Claude Desktop.
+## Development and release gates
+
+```powershell
+npm run certify:local
+npm run check:package
+npm audit --omit=dev --audit-level=high
+npm run scan:secrets
+```
+
+`npm run certify:live` creates and deletes a disposable `FRONTIER-CERT-*` notebook, adds deterministic text, verifies citations and claim linkage over five runs, performs a ten-query soak, tests persistence and invalidation, then checks clean shutdown. It must never be substituted with mocks.
+
+See [INSTALL.md](INSTALL.md), [CLAUDE_DESKTOP.md](CLAUDE_DESKTOP.md), [AUTH.md](AUTH.md), [SECURITY.md](SECURITY.md), [PRIVACY.md](PRIVACY.md), [ARCHITECTURE.md](ARCHITECTURE.md), [OPERATIONS.md](OPERATIONS.md), and [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

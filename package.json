@@ -16,6 +16,7 @@
     "certify:live": "npm run build && node scripts/certify-live.mjs",
     "check:integrity": "node scripts/check-release-integrity.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs",
+    "check:package": "node scripts/check-package-sanity.mjs && npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json",
     "test:live": "npm run build && node --test tests/live.test.js",
     "start": "node dist/index.js",
     "doctor": "node dist/cli.js doctor",

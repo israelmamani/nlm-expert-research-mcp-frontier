@@ -1,5 +1,3 @@
-# Autenticación
+# Authentication
 
-`npm run setup-auth` ejecuta el flujo deliberado con un perfil persistente dedicado. Abra la ventana visible, inicie sesión manualmente, complete 2FA y espere a que NotebookLM cargue; la ventana se cierra y la sesión se guarda automáticamente. Nunca introduzca credenciales en variables del MCP.
-
-En producción, `NLM_AUTO_REAUTH=1` habilita la recuperación automática. Si una operación real recibe `AUTH_REQUIRED`, `SESSION_EXPIRED` o una redirección inequívoca a Google Sign-In, el parche `FRONTIER_EXTERNAL_AUTH_RECOVERY=1` impide que el upstream espere en su propia ventana oculta. Frontier detiene el transporte, abre inmediatamente una sola ventana visible de autenticación y reintenta la operación original exactamente una vez. Solicitudes concurrentes comparten la misma ventana. Durante el login se envía progreso MCP cada 15 segundos cuando el cliente proporciona un `progressToken`, para evitar que la solicitud parezca inactiva. Si el usuario cancela, pasan 11 minutos o Google vuelve a rechazar la sesión, Frontier devuelve `AUTH_RECOVERY_FAILED` sin crear un bucle. `doctor` es pasivo y nunca abre la ventana. Use `NLM_AUTO_REAUTH=0` para desactivar este comportamiento.
+See [../AUTH.md](../AUTH.md). The user completes Google login and 2FA in a visible Chrome window; the resulting dedicated local profile contains sensitive persistent session state.

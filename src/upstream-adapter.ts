@@ -10,6 +10,7 @@ import {reportToolProgress} from './progress.js';
 import {createTextSourceWithRemoteConfirmation} from './source-reconciliation.js';
 import {TransportCircuitBreaker} from './transport-circuit-breaker.js';
 import {isTransportTimeout,runWithSingleTransportRecovery,withAbsoluteDeadline} from './transport-recovery.js';
+import {FrontierError} from './errors.js';
 
 type Json=Record<string,any>;
 
@@ -35,7 +36,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
   async health(){try{const value=await this.call('server_health',{});const ok=value.success!==false;return {ok,state:ok?'READY':'AUTH_REQUIRED',detail:ok?`Upstream transport ready; data=${this.dataDir}`:String(value.error??'Authentication required')};}catch(e){return {ok:false,state:/auth|login/i.test(String(e))?'AUTH_REQUIRED':'TRANSPORT_UNAVAILABLE',detail:String(e)};}}
   async authenticate(interactive=false){if(!interactive)return this.health();return this.performInteractiveAuthentication(process.env.NLM_FORCE_REAUTH==='1');}
   async listNotebooks():Promise<Notebook[]>{let last:Notebook[]=[];for(let attempt=1;attempt<=3;attempt++){const value=await this.call('notebook_list',{});const rows=value.data?.notebooks??value.notebooks??[];last=rows.map((n:Json)=>{const id=String(n.id);const url=String(n.url??`https://notebook.google.com/notebook/${id}`);this.notebookUrls.set(id,url);return {id,title:String(n.name??n.title??n.id),url,aliases:[]};});if(last.length||attempt===3)return last;log('warn','upstream.empty_notebook_list_retry',{attempt});await this.shutdown();await delay(1500*attempt);}return last;}
-  async listSources(notebookId:string):Promise<Source[]>{const value=await this.withUrlFallback(notebookId,url=>this.call('content_list',{notebook_url:url}));const rows=value.data?.sources??value.sources??[];return rows.map((source:Json,i:number)=>({id:String(source.id??`${notebookId}-source-${i+1}`),notebookId,title:String(source.name??source.title??`Source ${i+1}`),fingerprint:undefined}));}
+  async listSources(notebookId:string):Promise<Source[]>{const value=await this.withUrlFallback(notebookId,url=>this.call('content_list',{notebook_url:url,frontier_sources_only:true}));const rows=value.data?.sources??value.sources??[];return rows.map((source:Json,i:number)=>{if(typeof source.id!=='string'||!source.id)throw new FrontierError('REMOTE_SOURCE_LIST_UNAVAILABLE',`RPC source row ${i+1} has no authoritative source ID`);return {id:source.id,notebookId,title:String(source.name??source.title??`Source ${i+1}`),fingerprint:undefined};});}
   async ask(notebookId:string,query:string):Promise<AdapterAnswer>{const result=await this.withUrlFallback(notebookId,url=>this.askRaw(url,query,'json'));const data=result.data??result;const citations=readCitations(result);return {text:String(data.answer??data.text??''),citations,sourceIds:citations.map(c=>c.sourceId).filter(Boolean) as string[]};}
   async refresh(){await this.listNotebooks();}
   async shutdown(){
@@ -51,7 +52,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
   }
   async createNotebook(name:string):Promise<Notebook>{
     const baseline=new Set((await this.listNotebooks()).map(notebook=>notebook.id));
-    try{return this.notebookFromCreateResult(await this.call('notebook_create',{name}),name);}
+    try{return this.notebookFromCreateResult(await this.call('notebook_create',{name,frontier_rpc_only:true}),name);}
     catch(error){
       if(!/UPSTREAM_OPERATION_TIMEOUT/.test(String(error)))throw error;
       for(const waitMs of [0,1000,2000,4000]){
@@ -66,7 +67,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
     const confirmed=await createTextSourceWithRemoteConfirmation({
       notebookId,title,
       create:async()=>{
-        const value=await this.call('source_add',{source_type:'text',title,text,notebook_url:this.urlFor(notebookId)});
+        const value=await this.call('source_add',{source_type:'text',title,text,notebook_url:this.urlFor(notebookId),frontier_rpc_only:true});
         const data=value.data??value;
         return {sourceId:typeof data.sourceId==='string'?data.sourceId:undefined,sourceName:typeof data.sourceName==='string'?data.sourceName:undefined};
       },
@@ -76,7 +77,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
     return confirmed;
   }
   async deleteNotebooks(notebookIds:string[]){
-    try{return await this.call('notebook_delete',{notebook_ids:notebookIds});}
+    try{const value=await this.call('notebook_delete',{notebook_ids:notebookIds,frontier_rpc_only:true});const failed=value.data?.failed??value.failed??[];if(Array.isArray(failed)&&failed.length)throw new FrontierError('DELETE_NOT_CONFIRMED',`${failed.length} notebook deletion(s) remain present remotely`);return value;}
     catch(error){
       if(!/UPSTREAM_OPERATION_TIMEOUT/.test(String(error)))throw error;
       for(const waitMs of [0,1000,2000,4000]){
