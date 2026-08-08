@@ -8,6 +8,7 @@ import {log} from './log.js';
 import {AutomaticAuthRecovery, AutomaticAuthRecoveryError} from './auth-recovery.js';
 import {reportToolProgress} from './progress.js';
 import {createTextSourceWithRemoteConfirmation} from './source-reconciliation.js';
+import {TransportCircuitBreaker} from './transport-circuit-breaker.js';
 
 type Json=Record<string,any>;
 
@@ -20,6 +21,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
   private client?:Client; private transport?:StdioClientTransport;
   private hideWatcher?:ReturnType<typeof spawn>;
   private readonly notebookUrls=new Map<string,string>();
+  private readonly circuit=new TransportCircuitBreaker();
   private readonly dataDir=resolve(process.env.NLM_UPSTREAM_DATA_DIR??join(process.cwd(),'.data','upstream'));
   private readonly entry=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/index.js',import.meta.url));
   private readonly setupEntry=fileURLToPath(new URL('../node_modules/@roomi-fields/notebooklm-mcp/dist/cli/setup-auth.js',import.meta.url));
@@ -53,7 +55,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
   async deleteNotebooks(notebookIds:string[]){return this.call('notebook_delete',{notebook_ids:notebookIds});}
   private async askRaw(url:string,question:string,sourceFormat:string){return this.call('notebook_ask',{question,notebook_url:url,source_format:sourceFormat});}
   private async ensure(){if(this.client)return;this.client=new Client({name:'frontier-upstream-client',version:'0.1.0'});this.transport=new StdioClientTransport({command:process.execPath,args:[this.entry],cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stderr:process.env.NLM_UPSTREAM_DEBUG==='1'?'inherit':'pipe'});await this.client.connect(this.transport);this.startHideWatcher();log('info','upstream.connected',{name:this.name,browser:process.platform==='win32'&&process.env.NLM_HIDE_BROWSER!=='0'?'headful-hidden':'headful-visible'});}
-  private async call(name:string,args:Json){try{return await this.authRecovery.run(()=>this.callOnce(name,args),name);}catch(error){if(isTransportTimeout(error)){log('error','upstream.transport_stall',{name,budgetMs:operationBudget(name)});await this.shutdown();throw new Error(`UPSTREAM_OPERATION_TIMEOUT: ${name} exceeded its bounded transport budget`,{cause:error});}throw error;}}
+  private async call(name:string,args:Json){if(this.circuit.degraded)throw new Error('UPSTREAM_TRANSPORT_UNSTABLE: adapter is DEGRADED after repeated transport stalls');try{const value=await this.authRecovery.run(()=>this.callOnce(name,args),name);this.circuit.recordHealthy();return value;}catch(error){if(isTransportTimeout(error)){this.circuit.recordStall();log('error','upstream.transport_stall',{name,budgetMs:operationBudget(name),stalls:this.circuit.count});await this.shutdown();throw new Error(this.circuit.degraded?'UPSTREAM_TRANSPORT_UNSTABLE: adapter is DEGRADED after repeated transport stalls':`UPSTREAM_OPERATION_TIMEOUT: ${name} exceeded its bounded transport budget`,{cause:error});}throw error;}}
   private async callOnce(name:string,args:Json){await this.ensure();const result=await this.client!.callTool({name,arguments:args},undefined,{timeout:operationBudget(name),resetTimeoutOnProgress:false,onprogress:p=>log('debug','upstream.progress',{name,progress:p.progress,total:p.total})});const value=parseResult(result as Json);if(value.success===false)throw new Error(String(value.error??`${name} failed`));return value;}
   private async reauthenticateAutomatically(){const result=await this.performInteractiveAuthentication(true);if(!result.ok)throw new AutomaticAuthRecoveryError(result.detail??'Interactive authentication failed');}
   private async performInteractiveAuthentication(force:boolean){
