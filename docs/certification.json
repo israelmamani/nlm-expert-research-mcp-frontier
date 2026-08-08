@@ -3,8 +3,8 @@
   "product": "nlm-expert-research-mcp-frontier",
   "certified_code_sha": "75b39515dd0a056b489600cc8afcee78652279a7",
   "certified_subject_sha": "75b39515dd0a056b489600cc8afcee78652279a7",
-  "attestation_commit_sha": "75b39515dd0a056b489600cc8afcee78652279a7",
-  "timestamp": "2026-08-08T20:10:49.211Z",
+  "attestation_commit_sha": "526e867970a365a1252a237907af6a85977d3554",
+  "timestamp": "2026-08-08T20:11:12.760Z",
   "environment": {
     "platform": "win32",
     "node": "v26.3.1"
