@@ -1,10 +1,12 @@
 import {execFileSync} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
 
-const files=execFileSync('git',['ls-files'],{encoding:'utf8'}).split(/\r?\n/).filter(Boolean).filter(file=>file!=='scripts/scan-secrets.mjs');
+const files=execFileSync('git',['ls-files'],{encoding:'utf8'}).split(/\r?\n/).filter(Boolean);
+const tokenPrefixGroup=`(?:${['ghp_','github_pat_','xox[baprs]-'].join('|')})`;
+const githubTokenPattern=new RegExp(`${tokenPrefixGroup}[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}`);
 const patterns=[
   /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
-  /(?:ghp_|github_pat_|xox[baprs]-|AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,})/,
+  githubTokenPattern,
   /(?:password|passwd|secret|token)\s*[:=]\s*["'][^"']{12,}["']/i,
 ];
 const hits=[];
