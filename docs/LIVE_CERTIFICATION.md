@@ -4,8 +4,8 @@ Generated from `docs/certification.json`. No gate defaults to PASS.
 
 - Product version: `1.0.0`
 - Certified code SHA: `62076639d8972b7b13596c33907e887dfbaa35d8`
-- Attestation commit: `PENDING_ATTESTATION_COMMIT`
-- Generated from HEAD: `62076639d8972b7b13596c33907e887dfbaa35d8`
+- Attestation commit: `878f413dffe1ad50d34c6239bd7815803dc7003c`
+- Generated from HEAD: `878f413dffe1ad50d34c6239bd7815803dc7003c`
 - Timestamp: 2026-08-10T16:34:42.415Z
 - NotebookLM live ready: **YES**
 - Claude Desktop ready: **YES**
