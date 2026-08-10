@@ -1,7 +1,20 @@
-# Estado investigado — 2026-08-07
+# Estado investigado
 
-Fuentes consultadas: [MCP TypeScript SDK](https://ts.sdk.modelcontextprotocol.io/), [Claude Desktop Extensions/MCPB](https://www.anthropic.com/engineering/desktop-extensions), [Claude local MCP](https://support.anthropic.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop), [NotebookLM Help](https://support.google.com/notebooklm/answer/16179559), [source management](https://support.google.com/notebooklm/answer/16215270), [PleasePrompto/notebooklm-mcp](https://github.com/PleasePrompto/notebooklm-mcp), [roomi-fields/notebooklm-mcp](https://github.com/roomi-fields/notebooklm-mcp).
+El transporte NotebookLM es no oficial y depende de `@roomi-fields/notebooklm-mcp` 3.0.1. Frontier lo mantiene aislado detras de un adapter, con parche de compatibilidad validado en `scripts/check-release-integrity.mjs`.
 
-MCP ofrece SDK TypeScript y transportes stdio/Streamable HTTP. Claude Desktop soporta extensiones empaquetadas `.mcpb`. NotebookLM documenta chat grounded, citas y selección de fuentes, pero no se identificó una API pública oficial para este producto. Los proyectos comunitarios encontrados conducen un navegador persistente y son no oficiales; por tanto el transporte real se mantiene aislado y experimental.
+Estados que no deben mezclarse:
 
-Decisiones: Node/TypeScript para compatibilidad MCPB y Windows; registro JSON durable sin dependencia nativa de SQLite para reducir fricción de instalación, documentado como desviación; cache nunca autoritativo; internet separado de evidencia canónica; ningún bypass de autenticación, CAPTCHA o 2FA.
+- `IMPLEMENTED`: existe codigo para la capacidad.
+- `TESTED`: existe una prueba reproducible local o mock.
+- `CERTIFIED`: existe evidencia live para el SHA de codigo indicado en `docs/certification.json`.
+
+Decisiones de V1:
+
+- `LOCKED` es la politica de Internet predeterminada.
+- Las consultas externas requieren opt-in y pasan por sanitizacion; sus resultados son `CANDIDATE_EXTERNAL` y `UNVERIFIED`.
+- Las escrituras del registro se serializan dentro del proceso mediante `Store.update`.
+- Los claims solo reciben evidencia especifica; la negacion incompatible falla cerrada.
+- La contraevidencia se consulta como pasada separada y se conserva en `counterEvidenceIds`.
+- No se automatizan contrasenas, 2FA ni CAPTCHA.
+
+La certificacion live, persistencia de autenticacion, dynamic discovery y Claude Desktop permanecen pendientes hasta ejecutarse con credenciales humanas. La fuente de verdad es `docs/certification.json`; el Markdown se genera con `node scripts/generate-certification-ledger.mjs`.

@@ -1,3 +1,3 @@
-# Autenticación
+# Authentication
 
-`npm run setup-auth` ejecuta el flujo deliberado. En el adaptador real, abra una ventana visible, inicie sesión manualmente, complete 2FA y confirme NotebookLM. Nunca introduzca credenciales en variables del MCP. La persistencia de sesión y el cierre controlado del navegador son gates externos pendientes de validación live.
+See [../AUTH.md](../AUTH.md). The user completes Google login and 2FA in a visible Chrome window; the resulting dedicated local profile contains sensitive persistent session state.

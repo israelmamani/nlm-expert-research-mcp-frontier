@@ -26,7 +26,7 @@ export class MockNotebookAdapter implements NotebookAdapter {
     log('debug','mock.ask',{notebookId:id,queryLength:query.length});
     const text = this.answers[id] ?? 'NOT_FOUND_IN_CORPUS: no grounded answer is available in this notebook.';
     const ss = this.sources.filter(s=>s.notebookId===id);
-    return {text,citations:ss.slice(0,2).map(s=>({sourceId:s.id,sourceTitle:s.title,quote:`Evidence returned for query: ${query.slice(0,120)}`})),sourceIds:ss.map(s=>s.id)};
+    return {text,citations:ss.slice(0,2).map(s=>({sourceId:s.id,sourceTitle:s.title,quote:text})),sourceIds:ss.map(s=>s.id)};
   }
   async refresh(){}
   async shutdown(){}

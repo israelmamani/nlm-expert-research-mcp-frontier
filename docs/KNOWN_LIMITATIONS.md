@@ -1,3 +1,3 @@
 # Limitaciones conocidas
 
-No hay API oficial NotebookLM verificada en este entorno; el browser adapter es un boundary no operativo. No hay verificación independiente de citas sobre pasajes recuperados, challenger web, SQLite, selector registry Playwright ni certificación Claude Desktop live. El JSON store es deliberado por portabilidad inicial, pero requiere endurecimiento multi-proceso para producción.
+No hay API oficial NotebookLM verificada en este entorno; el transporte real requiere sesion Google humana. La verificacion de citas es determinista y conservadora, no una prueba semantica general. El challenger web devuelve candidatos externos separados, no autoridad canonica. El JSON store usa escritura atomica/backup y cola de transacciones por proceso, pero no es una base multi-proceso completa. Claude Desktop live aun no esta certificado.

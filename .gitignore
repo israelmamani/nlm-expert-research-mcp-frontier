@@ -2,6 +2,9 @@ node_modules/
 dist/
 .data/
 *.log
+debug-homepage.png
 .env
 auth-profile/
 release/
+.community-audit/
+registry.json

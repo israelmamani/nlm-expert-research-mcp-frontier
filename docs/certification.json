@@ -1,0 +1,137 @@
+{
+  "schema_version": "2.0",
+  "product": "nlm-expert-research-mcp-frontier",
+  "version": "1.0.0",
+  "certified_code_sha": "62076639d8972b7b13596c33907e887dfbaa35d8",
+  "certified_subject_sha": "62076639d8972b7b13596c33907e887dfbaa35d8",
+  "attestation_commit_sha": "878f413dffe1ad50d34c6239bd7815803dc7003c",
+  "generated_from_head_sha": "878f413dffe1ad50d34c6239bd7815803dc7003c",
+  "timestamp": "2026-08-10T16:34:42.415Z",
+  "environment": {
+    "platform": "win32",
+    "node": "v26.3.1",
+    "chrome": "151.0.7922.109"
+  },
+  "dependencies": {
+    "mcp_sdk": "^1.30.0",
+    "upstream": "3.0.1"
+  },
+  "local_gates": {
+    "build": "PASS",
+    "tests": "PASS",
+    "integrity": "PASS",
+    "secrets": "PASS",
+    "audit": "PASS",
+    "package_sanity": "PASS"
+  },
+  "targeted_stability": {
+    "status": "PASS",
+    "runs": 5,
+    "citation_linkage": "5/5",
+    "semantic_verified": "5/5",
+    "external_leakage": "0/5",
+    "wrong_assignment": "0/5",
+    "stalls": 0,
+    "recoveries": 0,
+    "orphan_processes": 0
+  },
+  "soak": {
+    "status": "PASS",
+    "queries": 10,
+    "success": 10,
+    "fail": 0,
+    "stalls": 0,
+    "recoveries": 0,
+    "median_ms": 10514,
+    "max_ms": 14128
+  },
+  "backend_live_gates": {
+    "auth": "PASS",
+    "persistence": "PASS",
+    "enumeration": "PASS",
+    "grounded_query": "PASS",
+    "citations": "PASS",
+    "claim_linkage": "PASS",
+    "dynamic_notebook": "PASS",
+    "dynamic_source": "PASS",
+    "delete_invalidation": "PASS",
+    "locked_engine": "PASS",
+    "clean_shutdown": "PASS"
+  },
+  "live_gates": {
+    "auth": "PASS",
+    "persistence": "PASS",
+    "enumeration": "PASS",
+    "grounded_query": "PASS",
+    "citations": "PASS",
+    "claim_linkage": "PASS",
+    "dynamic_notebook": "PASS",
+    "dynamic_source": "PASS",
+    "delete_invalidation": "PASS",
+    "locked_engine": "PASS",
+    "clean_shutdown": "PASS"
+  },
+  "claude_desktop": {
+    "mcpb_installation": "PASS",
+    "server_startup": "PASS",
+    "tool_enumeration": "PASS",
+    "natural_invocation": "PASS",
+    "same_session_discovery": "PASS",
+    "grounded_query": "PASS",
+    "citation_correctness": "PASS",
+    "browser_invisible": "PASS",
+    "auth_persistence": "PASS"
+  },
+  "mcpb": {
+    "build": "PASS",
+    "validation": "PASS",
+    "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
+    "sha256": "A963E4439A3E19B347100920732FA14771D1A116462D73441DA0554F77619067"
+  },
+  "evidence": {
+    "backend_live": {
+      "file": ".data/certification/backend-live-result.json",
+      "timestamp": "2026-08-10T16:29:42.270Z",
+      "notebooks": 22
+    },
+    "mcpb": {
+      "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
+      "sha256": "A963E4439A3E19B347100920732FA14771D1A116462D73441DA0554F77619067",
+      "validated": true,
+      "private_state_in_artifact": false
+    },
+    "claude_desktop": {
+      "status": "PASS",
+      "installed_version": "1.0.0",
+      "tools": 10,
+      "runtime_manifest_launcher_identical_to_prior_certified_v1": true,
+      "natural_catalog": true,
+      "same_session": {
+        "status": "PASS",
+        "title": "FRONTIER-CERT-V1-SAME-SESSION-20260810-1603",
+        "notebook_id": "823f0c05-7c8f-460b-9b62-7a56a4f90ca5",
+        "observed_count": 23,
+        "claude_restarted": false,
+        "cleanup_confirmed_count": 22
+      },
+      "grounded": {
+        "notebook": "FANCESA",
+        "research": true,
+        "citation_linked": true,
+        "external_evidence": 0
+      },
+      "visible_frontier_chrome": 0,
+      "auth_persisted": true
+    },
+    "external_dependencies": {
+      "notebooklm": "Unofficial browser-auth transport; no official public Google NotebookLM API",
+      "google_auth": "External Google account access, sign-in controls, and NotebookLM availability apply"
+    }
+  },
+  "blocking_gates": [],
+  "open_p0": [],
+  "open_p1": [],
+  "NOTEBOOKLM_LIVE_READY": "YES",
+  "CLAUDE_DESKTOP_READY": "YES",
+  "verdict": "PRODUCTION_READY_WITH_EXTERNAL_DEPENDENCIES"
+}

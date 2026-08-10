@@ -1,6 +1,6 @@
 {
   "name": "nlm-expert-research-mcp-frontier",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Source-locked, evidence-first NotebookLM research MCP for Claude Desktop.",
   "type": "module",
   "main": "dist/index.js",
@@ -8,21 +8,33 @@
     "nlm-mcp": "dist/cli.js"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-upstream.mjs",
+    "patch:upstream": "node scripts/patch-upstream.mjs",
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/**/*.test.js",
+    "test": "npm run build && node --test tests/core.test.js tests/live.test.js",
+    "certify:local": "npm run build && node --test tests/core.test.js",
+    "certify:live": "npm run build && node scripts/certify-live.mjs",
+    "check:integrity": "node scripts/check-release-integrity.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "check:package": "node scripts/check-package-sanity.mjs && npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json",
+    "test:live": "npm run build && node --test tests/live.test.js",
     "start": "node dist/index.js",
     "doctor": "node dist/cli.js doctor",
     "setup-auth": "node dist/cli.js setup-auth",
     "package:mcpb": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-mcpb.ps1"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.5",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@roomi-fields/notebooklm-mcp": "3.0.1",
+    "playwright": "^1.62.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "typescript": "^5.9.2"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT"
 }

@@ -1,3 +1,5 @@
-# Certificación
+# Certificacion
 
-Software: `CONDITIONAL_READY`. Tests locales ejecutados: PASS. Live NotebookLM, login, dynamic live gate, source live gate, Claude Desktop y MCPB installation: NOT RUN. Por ello no se declara `AUDITED_COMPLETE` ni `PRODUCTION_READY_WITH_EXTERNAL_DEPENDENCIES`.
+La certificacion se mantiene en `RELEASE_BLOCKED` hasta que las compuertas NotebookLM live y Claude Desktop pasen con evidencia para el SHA de codigo indicado en `docs/certification.json`.
+
+No se deben copiar resultados de una ejecucion anterior ni convertir tests omitidos en PASS. El ledger JSON es la fuente de verdad y `docs/LIVE_CERTIFICATION.md` es su reporte generado.
