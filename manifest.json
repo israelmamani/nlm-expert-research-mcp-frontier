@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "nlm-expert-research-mcp-frontier",
   "display_name": "NLM Expert Research MCP — Frontier",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Source-locked, evidence-first NotebookLM research with persistent authentication and structured citations.",
   "author": {
     "name": "NLM Expert Research MCP Contributors"
