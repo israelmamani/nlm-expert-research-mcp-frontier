@@ -34,8 +34,10 @@ if(!tools.includes('FRONTIER_RPC_SOURCE_LIST')||!tools.includes('frontier_source
 if(!tools.includes('FRONTIER_RPC_CITATION_SOURCE_ID')||!tools.includes('sourceId: r.source_id'))throw new Error('Frontier RPC citation source-id patch is absent');
 if(!tools.includes('FRONTIER_RPC_MUTATION_GUARD')||!tools.includes('frontier_rpc_only'))throw new Error('Frontier RPC-only mutation guard is absent');
 if(!tools.includes('FRONTIER_RPC_ACCOUNT_HOST')||!tools.includes('baseHost, hl: CONFIG.uiLocale'))throw new Error('Frontier account-resolved RPC host patch is absent');
+if(!tools.includes('FRONTIER_COMPLETE_NOTEBOOK_SCROLL'))throw new Error('Frontier complete-catalog scroll patch is absent');
+if(!tools.includes('FRONTIER_AUTHORITATIVE_NOTEBOOK_LIST'))throw new Error('Frontier authoritative notebook-list patch is absent');
 if(!rpc.includes('FRONTIER_NO_MUTATION_RETRY')||!rpc.includes('FRONTIER_MUTATION_RPCS.has(name)'))throw new Error('Upstream mutation no-retry patch is absent');
-if(!runtime.includes("'--start-minimized'"))throw new Error('Upstream minimized-browser patch is absent');
+if(!runtime.includes("'--start-minimized'")||!runtime.includes("'--window-position=-32000,-32000'")||!runtime.includes("'--hide-crash-restore-bubble'"))throw new Error('Upstream invisible-browser patch is absent');
 if(!auth.includes('FRONTIER_EXTERNAL_AUTH_RECOVERY'))throw new Error('Upstream external-auth patch is absent');
 if(!content.includes('FRONTIER_TEXT_UPLOAD_DIALOG_SETTLE'))throw new Error('Upstream text-upload race patch is absent');
 console.log('Release integrity checks passed.');

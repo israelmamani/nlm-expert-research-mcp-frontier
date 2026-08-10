@@ -15,13 +15,18 @@ else if(source.includes(legacy)){await writeFile(target,source.replace(legacy,co
 else throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: expected create-notebook URL matcher was not found in ${target}`);
 
 const minimizedArg="                '--start-minimized',";
+const offscreenArg="                '--window-position=-32000,-32000',";
+const crashBubbleArg="                '--hide-crash-restore-bubble',";
 const runtimeSource=await readFile(runtimeTarget,'utf8');
-if(runtimeSource.includes(minimizedArg)) console.log('NotebookLM minimized-runtime patch already applied.');
-else {
+if(runtimeSource.includes(minimizedArg)&&runtimeSource.includes(offscreenArg)&&runtimeSource.includes(crashBubbleArg)) console.log('NotebookLM invisible-runtime patch already applied.');
+else if(!runtimeSource.includes(minimizedArg)) {
   const anchor="            args: [\n                '--disable-blink-features=AutomationControlled',";
   if(!runtimeSource.includes(anchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: launch argument anchor was not found in ${runtimeTarget}`);
-  await writeFile(runtimeTarget,runtimeSource.replace(anchor,`            args: [\n${minimizedArg}\n                '--disable-blink-features=AutomationControlled',`),'utf8');
-  console.log('Applied minimized visible-browser runtime patch.');
+  await writeFile(runtimeTarget,runtimeSource.replace(anchor,`            args: [\n${minimizedArg}\n${offscreenArg}\n${crashBubbleArg}\n                '--disable-blink-features=AutomationControlled',`),'utf8');
+  console.log('Applied invisible browser runtime patch.');
+} else {
+  await writeFile(runtimeTarget,runtimeSource.replace(minimizedArg,`${minimizedArg}\n${offscreenArg}\n${crashBubbleArg}`),'utf8');
+  console.log('Upgraded minimized browser runtime patch to invisible mode.');
 }
 
 const externalAuthMarker="process.env.FRONTIER_EXTERNAL_AUTH_RECOVERY === '1'";
@@ -190,4 +195,79 @@ else {
         return new BatchExecuteClient({ cookies, baseHost, hl: CONFIG.uiLocale });`);
   await writeFile(target,patched,'utf8');
   console.log('Applied NotebookLM account-resolved RPC host patch.');
+}
+
+const completeNotebookScrollMarker='FRONTIER_COMPLETE_NOTEBOOK_SCROLL';
+const scrollToolsSource=await readFile(target,'utf8');
+if(scrollToolsSource.includes(completeNotebookScrollMarker)) console.log('NotebookLM complete-catalog scroll patch already applied.');
+else {
+  const scrollAnchor=`                await randomDelay(2000, 3000);
+                await sendProgress?.('Extracting notebook list...', 3, 5);`;
+  if(!scrollToolsSource.includes(scrollAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: complete-catalog scroll anchor was not found in ${target}`);
+  const scrollPatch=`                await randomDelay(2000, 3000);
+                // ${completeNotebookScrollMarker}: the homepage virtualizes older cards. Scroll every
+                // scrollable container until the UUID count stabilizes so a partial viewport can never
+                // be mistaken for the authoritative catalog.
+                let frontierLastNotebookCount = -1;
+                let frontierStableNotebookRounds = 0;
+                for (let frontierScrollRound = 0; frontierScrollRound < 18 && frontierStableNotebookRounds < 3; frontierScrollRound++) {
+                    await page.evaluate(\`(() => {
+                      const candidates = [document.scrollingElement, ...document.querySelectorAll('*')].filter(Boolean);
+                      for (const element of candidates) {
+                        if (element.scrollHeight > element.clientHeight + 80) element.scrollTop = element.scrollHeight;
+                      }
+                      window.scrollTo(0, Math.max(document.body.scrollHeight, document.documentElement.scrollHeight));
+                    })()\`);
+                    await randomDelay(500, 750);
+                    const frontierNotebookCount = await page.locator('[id^="project-"][id$="-title"]').count();
+                    frontierStableNotebookRounds = frontierNotebookCount === frontierLastNotebookCount ? frontierStableNotebookRounds + 1 : 0;
+                    frontierLastNotebookCount = frontierNotebookCount;
+                }
+                log.info(\`  Complete-catalog scroll stabilized at \${frontierLastNotebookCount} notebook titles\`);
+                await sendProgress?.('Extracting notebook list...', 3, 5);`;
+  await writeFile(target,scrollToolsSource.replace(scrollAnchor,scrollPatch),'utf8');
+  console.log('Applied NotebookLM complete-catalog scroll patch.');
+}
+
+const authoritativeNotebookListMarker='FRONTIER_AUTHORITATIVE_NOTEBOOK_LIST';
+const authoritativeToolsSource=await readFile(target,'utf8');
+if(authoritativeToolsSource.includes(authoritativeNotebookListMarker)) console.log('NotebookLM authoritative notebook-list retry patch already applied.');
+else {
+  const returnAnchor=`                // Restore headless config
+                CONFIG.headless = originalHeadless;
+                return {
+                    success: true,
+                    data: {
+                        notebooks,
+                        total: notebooks.length,
+                        message: \`Found \${notebooks.length} notebooks in NotebookLM account\`,
+                    },
+                };`;
+  if(!authoritativeToolsSource.includes(returnAnchor))throw new Error(`Unsupported @roomi-fields/notebooklm-mcp build: authoritative notebook-list return anchor was not found in ${target}`);
+  const authoritativeReturn=`                // Restore headless config
+                CONFIG.headless = originalHeadless;
+                // ${authoritativeNotebookListMarker}: DOM navigation refreshes an expired browser session,
+                // but homepage cards also contain rotating featured notebooks. Retry the owned-notebook
+                // RPC after that bootstrap and fail closed if the authoritative list is still unavailable.
+                if (this.useRpcTransport()) {
+                    try {
+                        const rpc = await this.getNotebookRpc();
+                        const authoritativeNotebooks = await rpc.listNotebooks();
+                        log.success(\`  Authoritative RPC retry found \${authoritativeNotebooks.length} owned notebooks\`);
+                        return { success: true, data: { notebooks: authoritativeNotebooks, total: authoritativeNotebooks.length, message: \`Found \${authoritativeNotebooks.length} owned notebooks in NotebookLM account\` } };
+                    }
+                    catch (rpcError) {
+                        throw new Error('AUTHORITATIVE_NOTEBOOK_LIST_UNAVAILABLE: ' + (rpcError instanceof Error ? rpcError.message : String(rpcError)));
+                    }
+                }
+                return {
+                    success: true,
+                    data: {
+                        notebooks,
+                        total: notebooks.length,
+                        message: \`Found \${notebooks.length} notebooks in NotebookLM account\`,
+                    },
+                };`;
+  await writeFile(target,authoritativeToolsSource.replace(returnAnchor,authoritativeReturn),'utf8');
+  console.log('Applied NotebookLM authoritative notebook-list retry patch.');
 }

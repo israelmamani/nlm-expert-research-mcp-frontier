@@ -89,7 +89,7 @@ export class UpstreamNotebookLmAdapter implements NotebookAdapter {
     }
   }
   private async askRaw(url:string,question:string,sourceFormat:string){return this.call('notebook_ask',{question,notebook_url:url,source_format:sourceFormat});}
-  private async ensure(){if(this.client)return;this.client=new Client({name:'frontier-upstream-client',version:'0.1.0'});this.transport=new StdioClientTransport({command:process.execPath,args:[this.entry],cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stderr:process.env.NLM_UPSTREAM_DEBUG==='1'?'inherit':'pipe'});await this.client.connect(this.transport);this.startHideWatcher();log('info','upstream.connected',{name:this.name,browser:process.platform==='win32'&&process.env.NLM_HIDE_BROWSER!=='0'?'headful-hidden':'headful-visible'});}
+  private async ensure(){if(this.client)return;this.client=new Client({name:'frontier-upstream-client',version:'0.1.0'});const inheritStderr=process.env.NLM_UPSTREAM_DEBUG==='1';this.transport=new StdioClientTransport({command:process.execPath,args:[this.entry],cwd:process.cwd(),env:this.env({HEADLESS:'false',BROWSER_CHANNEL:'chrome'}),stderr:inheritStderr?'inherit':'pipe'});if(!inheritStderr)(this.transport.stderr as {resume?:()=>void}|null)?.resume?.();await this.client.connect(this.transport);this.startHideWatcher();log('info','upstream.connected',{name:this.name,browser:process.platform==='win32'&&process.env.NLM_HIDE_BROWSER!=='0'?'headful-hidden':'headful-visible'});}
   private async call(name:string,args:Json){
     return runWithSingleTransportRecovery({
       name,

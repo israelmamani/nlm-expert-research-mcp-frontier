@@ -151,7 +151,7 @@ test('successful live sync clears stale catalog markers',async()=>{
 test('runtime MCP tools stay in exact parity with the manifest product surface',async()=>{
   const manifest=JSON.parse(await readFile('manifest.json','utf8'));const client=new Client({name:'frontier-test-client',version:'1'});
   const transport=new StdioClientTransport({command:process.execPath,args:['dist/index.js'],cwd:process.cwd(),env:{...process.env,NLM_ADAPTER:'mock'}});
-  try{await client.connect(transport);const listed=await client.listTools();assert.deepEqual(listed.tools.map(tool=>tool.name).sort(),manifest.tools.map(tool=>tool.name).sort());assert.equal(listed.tools.length,10);}
+  try{await client.connect(transport);const listed=await client.listTools();assert.deepEqual(listed.tools.map(tool=>tool.name).sort(),manifest.tools.map(tool=>tool.name).sort());assert.equal(listed.tools.length,10);const result=await client.callTool({name:'list_notebooks',arguments:{freshness:'force'}});const payload=JSON.parse(result.content[0].text);assert.equal(payload.count,payload.notebooks.length);assert.equal(payload.catalog_stale,false);}
   finally{await client.close().catch(()=>undefined);}
 });
 
@@ -174,6 +174,27 @@ test('adapter shutdown closes its transport and hide watcher without touching un
   await adapter.shutdown();
   assert.equal(transportClosed,1);assert.equal(watcherKilled,1);assert.equal(unrelatedChromeKilled,0);
   assert.equal(adapter.transport,undefined);assert.equal(adapter.hideWatcher,undefined);
+});
+
+test('upstream stderr is always drained outside explicit debug mode',async()=>{
+  const source=await readFile('src/upstream-adapter.ts','utf8');
+  assert.match(source,/transport\.stderr[\s\S]{0,80}\.resume\?\.\(\)/,'An unread upstream stderr pipe can deadlock a long-lived Claude Desktop session');
+});
+
+test('Windows launcher loss and stdio closure both trigger bounded server cleanup',async()=>{
+  const source=await readFile('src/server.ts','utf8');
+  assert.match(source,/process\.stdin\.once\('end',requestStop\)/);
+  assert.match(source,/process\.stdin\.once\('close',requestStop\)/);
+  assert.match(source,/process\.kill\(launcherPid,0\)/);
+  assert.match(source,/await adapter\.shutdown\(\)/);
+});
+
+test('NotebookLM DOM fallback scrolls virtualized cards to a stable complete catalog',async()=>{
+  const source=await readFile('node_modules/@roomi-fields/notebooklm-mcp/dist/tools/index.js','utf8');
+  assert.match(source,/FRONTIER_COMPLETE_NOTEBOOK_SCROLL/);
+  assert.match(source,/frontierStableNotebookRounds < 3/);
+  assert.match(source,/FRONTIER_AUTHORITATIVE_NOTEBOOK_LIST/);
+  assert.match(source,/AUTHORITATIVE_NOTEBOOK_LIST_UNAVAILABLE/);
 });
 
 test('text source RPC confirmation uses the returned remote source id',async()=>{let creates=0;let reads=0;const source={id:'src-1',notebookId:'nb-1',title:'Remote title'};const result=await createTextSourceWithRemoteConfirmation({notebookId:'nb-1',title:'Requested title',create:async()=>{creates++;return {sourceId:'src-1'};},list:async()=>++reads===1?[]:[source],sleep:async()=>undefined,delaysMs:[0]});assert.equal(result.state,'REMOTE_CONFIRMED');assert.equal(result.source.id,'src-1');assert.equal(creates,1);});

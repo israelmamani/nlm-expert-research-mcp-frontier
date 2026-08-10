@@ -11,8 +11,8 @@
     "type": "node",
     "entry_point": "dist/index.js",
     "mcp_config": {
-      "command": "node",
-      "args": ["${__dirname}/dist/index.js"],
+      "command": "${__dirname}/launch-frontier.cmd",
+      "args": [],
       "env": {
         "NLM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/frontier",
         "NLM_UPSTREAM_DATA_DIR": "${HOME}/.nlm-expert-research-mcp/upstream",
