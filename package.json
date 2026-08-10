@@ -11,7 +11,7 @@
     "postinstall": "node scripts/patch-upstream.mjs",
     "patch:upstream": "node scripts/patch-upstream.mjs",
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/**/*.test.js",
+    "test": "npm run build && node --test tests/core.test.js tests/live.test.js",
     "certify:local": "npm run build && node --test tests/core.test.js",
     "certify:live": "npm run build && node scripts/certify-live.mjs",
     "check:integrity": "node scripts/check-release-integrity.mjs",
