@@ -1,11 +1,14 @@
 # Live Certification
 
-Generated from `docs/certification.json`.
+Generated from `docs/certification.json`. No gate defaults to PASS.
 
-- Certified code SHA: `75b39515dd0a056b489600cc8afcee78652279a7`
-- Attestation commit: `526e867970a365a1252a237907af6a85977d3554`
-- Timestamp: 2026-08-08T20:11:12.760Z
-- Verdict: **RELEASE_BLOCKED**
+- Product version: `0.1.0`
+- Certified code SHA: `2ee5585e7f4b03207ab0a10ddaf78afb706ed95b`
+- Attestation commit: `PENDING_ATTESTATION_COMMIT`
+- Generated from HEAD: `2ee5585e7f4b03207ab0a10ddaf78afb706ed95b`
+- Timestamp: 2026-08-10T15:22:49.897Z
+- NotebookLM live ready: **YES**
+- Verdict: **RELEASE_CERTIFIED**
 
 ## Local gates
 
@@ -14,47 +17,68 @@ Generated from `docs/certification.json`.
 - integrity: **PASS**
 - secrets: **PASS**
 - audit: **PASS**
+- package_sanity: **PASS**
 
-## Live gates
+## Targeted stability
 
-- auth: **NOT_RUN**
-- persistence: **NOT_RUN**
-- enumeration: **NOT_RUN**
-- grounded_query: **NOT_RUN**
-- citations: **NOT_RUN**
-- dynamic_notebook: **NOT_RUN**
-- dynamic_source: **NOT_RUN**
-- delete_invalidation: **NOT_RUN**
-- rename: **NOT_RUN**
-- locked_engine: **BLOCKED**
+- status: **PASS**
+- runs: **5**
+- citation_linkage: **5/5**
+- semantic_verified: **5/5**
+- external_leakage: **0/5**
+- wrong_assignment: **0/5**
+- stalls: **0**
+- recoveries: **0**
+- orphan_processes: **0**
+
+## Soak
+
+- status: **PASS**
+- queries: **10**
+- success: **10**
+- fail: **0**
+- stalls: **0**
+- recoveries: **0**
+- median_ms: **11351**
+- max_ms: **12152**
+
+## Backend live gates
+
+- auth: **PASS**
+- persistence: **PASS**
+- enumeration: **PASS**
+- grounded_query: **PASS**
+- citations: **PASS**
+- claim_linkage: **PASS**
+- dynamic_notebook: **PASS**
+- dynamic_source: **PASS**
+- delete_invalidation: **PASS**
+- locked_engine: **PASS**
+- clean_shutdown: **PASS**
 
 ## Claude Desktop
 
-- mcpb: **NOT_RUN**
-- tools: **NOT_RUN**
-- natural_invocation: **NOT_RUN**
-- same_session_discovery: **NOT_RUN**
-- browser_invisible: **NOT_RUN**
+- mcpb_installation: **PASS**
+- server_startup: **PASS**
+- tool_enumeration: **PASS**
+- natural_invocation: **PASS**
+- same_session_discovery: **PASS**
+- grounded_query: **PASS**
+- citation_correctness: **PASS**
+- browser_invisible: **PASS**
+- auth_persistence: **PASS**
+
+## MCPB
+
+- build: **PASS**
+- validation: **PASS**
+- sha256: **EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A**
 
 ## Blocking gates
 
-- `live.locked_engine`
-- `live.auth`
-- `live.persistence`
-- `live.enumeration`
-- `live.grounded_query`
-- `live.citations`
-- `live.dynamic_notebook`
-- `live.dynamic_source`
-- `live.delete_invalidation`
-- `claude_desktop.mcpb`
-- `claude_desktop.tools`
-- `claude_desktop.natural_invocation`
-- `claude_desktop.same_session_discovery`
-- `claude_desktop.browser_invisible`
+- None
 
-MCPB SHA-256: `NOT_BUILT`
+## Open defects
 
-## Open P1
-
-- `live.locked_engine.notebooklm_transport`: Catalog/create recovered (24 notebooks and one disposable create), but deterministic engine runs reproducibly exceeded their bounded window and left an upstream Chrome session unresponsive.
+- P0: None
+- P1: None

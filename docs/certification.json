@@ -1,13 +1,16 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "product": "nlm-expert-research-mcp-frontier",
-  "certified_code_sha": "75b39515dd0a056b489600cc8afcee78652279a7",
-  "certified_subject_sha": "75b39515dd0a056b489600cc8afcee78652279a7",
-  "attestation_commit_sha": "526e867970a365a1252a237907af6a85977d3554",
-  "timestamp": "2026-08-08T20:11:12.760Z",
+  "version": "0.1.0",
+  "certified_code_sha": "2ee5585e7f4b03207ab0a10ddaf78afb706ed95b",
+  "certified_subject_sha": "2ee5585e7f4b03207ab0a10ddaf78afb706ed95b",
+  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
+  "generated_from_head_sha": "2ee5585e7f4b03207ab0a10ddaf78afb706ed95b",
+  "timestamp": "2026-08-10T15:22:49.897Z",
   "environment": {
     "platform": "win32",
-    "node": "v26.3.1"
+    "node": "v26.3.1",
+    "chrome": "151.0.7922.109"
   },
   "dependencies": {
     "mcp_sdk": "^1.30.0",
@@ -18,51 +21,111 @@
     "tests": "PASS",
     "integrity": "PASS",
     "secrets": "PASS",
-    "audit": "PASS"
+    "audit": "PASS",
+    "package_sanity": "PASS"
+  },
+  "targeted_stability": {
+    "status": "PASS",
+    "runs": 5,
+    "citation_linkage": "5/5",
+    "semantic_verified": "5/5",
+    "external_leakage": "0/5",
+    "wrong_assignment": "0/5",
+    "stalls": 0,
+    "recoveries": 0,
+    "orphan_processes": 0
+  },
+  "soak": {
+    "status": "PASS",
+    "queries": 10,
+    "success": 10,
+    "fail": 0,
+    "stalls": 0,
+    "recoveries": 0,
+    "median_ms": 11351,
+    "max_ms": 12152
+  },
+  "backend_live_gates": {
+    "auth": "PASS",
+    "persistence": "PASS",
+    "enumeration": "PASS",
+    "grounded_query": "PASS",
+    "citations": "PASS",
+    "claim_linkage": "PASS",
+    "dynamic_notebook": "PASS",
+    "dynamic_source": "PASS",
+    "delete_invalidation": "PASS",
+    "locked_engine": "PASS",
+    "clean_shutdown": "PASS"
   },
   "live_gates": {
-    "auth": "NOT_RUN",
-    "persistence": "NOT_RUN",
-    "enumeration": "NOT_RUN",
-    "grounded_query": "NOT_RUN",
-    "citations": "NOT_RUN",
-    "dynamic_notebook": "NOT_RUN",
-    "dynamic_source": "NOT_RUN",
-    "delete_invalidation": "NOT_RUN",
-    "rename": "NOT_RUN",
-    "locked_engine": "BLOCKED"
+    "auth": "PASS",
+    "persistence": "PASS",
+    "enumeration": "PASS",
+    "grounded_query": "PASS",
+    "citations": "PASS",
+    "claim_linkage": "PASS",
+    "dynamic_notebook": "PASS",
+    "dynamic_source": "PASS",
+    "delete_invalidation": "PASS",
+    "locked_engine": "PASS",
+    "clean_shutdown": "PASS"
   },
   "claude_desktop": {
-    "mcpb": "NOT_RUN",
-    "tools": "NOT_RUN",
-    "natural_invocation": "NOT_RUN",
-    "same_session_discovery": "NOT_RUN",
-    "browser_invisible": "NOT_RUN"
+    "mcpb_installation": "PASS",
+    "server_startup": "PASS",
+    "tool_enumeration": "PASS",
+    "natural_invocation": "PASS",
+    "same_session_discovery": "PASS",
+    "grounded_query": "PASS",
+    "citation_correctness": "PASS",
+    "browser_invisible": "PASS",
+    "auth_persistence": "PASS"
   },
-  "blocking_gates": [
-    "live.locked_engine",
-    "live.auth",
-    "live.persistence",
-    "live.enumeration",
-    "live.grounded_query",
-    "live.citations",
-    "live.dynamic_notebook",
-    "live.dynamic_source",
-    "live.delete_invalidation",
-    "claude_desktop.mcpb",
-    "claude_desktop.tools",
-    "claude_desktop.natural_invocation",
-    "claude_desktop.same_session_discovery",
-    "claude_desktop.browser_invisible"
-  ],
-  "mcpb_sha256": "NOT_BUILT",
-  "open_p0": [],
-  "open_p1": [
-    {
-      "id": "live.locked_engine.notebooklm_transport",
-      "status": "BLOCKED",
-      "description": "Transport incident classified UNKNOWN_TRANSIENT for catalog/create (24 notebooks and one disposable create recovered), but reproducibly BLOCKED during deterministic engine runs: the live process exceeded its bounded window and left an upstream Chrome session unresponsive."
+  "mcpb": {
+    "build": "PASS",
+    "validation": "PASS",
+    "sha256": "EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A"
+  },
+  "evidence": {
+    "backend_live": {
+      "file": ".data/certification/backend-live-result.json",
+      "timestamp": "2026-08-10T14:48:07.132Z",
+      "notebooks": 22
+    },
+    "claude_catalog": {
+      "status": "PASS",
+      "count": 22,
+      "catalog_stale": false,
+      "remote_discovery_error": false
+    },
+    "claude_same_session": {
+      "status": "PASS",
+      "title": "FRONTIER-SAME-SESSION-20260810-1055",
+      "notebook_id": "7178e606-390b-42fe-bcd6-ea2f35d869b9",
+      "baseline_count": 22,
+      "observed_count": 23,
+      "claude_restarted": false,
+      "cleanup_confirmed_count": 22
+    },
+    "claude_grounded": {
+      "status": "PASS",
+      "notebook": "FANCESA",
+      "tool": "research",
+      "citation_linked": true,
+      "external_evidence": 0
+    },
+    "browser": {
+      "visible_frontier_chrome": 0
+    },
+    "mcpb": {
+      "path": "release/NLM-Expert-Research-MCP-Frontier-0.1.0.mcpb",
+      "sha256": "EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A"
     }
-  ],
-  "verdict": "RELEASE_BLOCKED"
+  },
+  "blocking_gates": [],
+  "open_p0": [],
+  "open_p1": [],
+  "NOTEBOOKLM_LIVE_READY": "YES",
+  "verdict": "RELEASE_CERTIFIED"
 }
