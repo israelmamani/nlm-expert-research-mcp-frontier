@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "certified_code_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
   "certified_subject_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
-  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
-  "generated_from_head_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
+  "attestation_commit_sha": "3a0c17cd9b47c91e6b117e198fdd789e5d243406",
+  "generated_from_head_sha": "3a0c17cd9b47c91e6b117e198fdd789e5d243406",
   "timestamp": "2026-08-10T16:12:04.584Z",
   "environment": {
     "platform": "win32",
