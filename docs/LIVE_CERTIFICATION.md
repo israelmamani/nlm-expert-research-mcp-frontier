@@ -4,8 +4,8 @@ Generated from `docs/certification.json`. No gate defaults to PASS.
 
 - Product version: `0.1.0`
 - Certified code SHA: `2ee5585e7f4b03207ab0a10ddaf78afb706ed95b`
-- Attestation commit: `PENDING_ATTESTATION_COMMIT`
-- Generated from HEAD: `2ee5585e7f4b03207ab0a10ddaf78afb706ed95b`
+- Attestation commit: `ed0c2d405a7b2226d23aad569c00fcca4a58fa4a`
+- Generated from HEAD: `ed0c2d405a7b2226d23aad569c00fcca4a58fa4a`
 - Timestamp: 2026-08-10T15:22:49.897Z
 - NotebookLM live ready: **YES**
 - Verdict: **RELEASE_CERTIFIED**
