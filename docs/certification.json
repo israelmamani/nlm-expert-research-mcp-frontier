@@ -1,12 +1,12 @@
 {
   "schema_version": "2.0",
   "product": "nlm-expert-research-mcp-frontier",
-  "version": "0.1.0",
-  "certified_code_sha": "2ee5585e7f4b03207ab0a10ddaf78afb706ed95b",
-  "certified_subject_sha": "2ee5585e7f4b03207ab0a10ddaf78afb706ed95b",
-  "attestation_commit_sha": "ed0c2d405a7b2226d23aad569c00fcca4a58fa4a",
-  "generated_from_head_sha": "ed0c2d405a7b2226d23aad569c00fcca4a58fa4a",
-  "timestamp": "2026-08-10T15:22:49.897Z",
+  "version": "1.0.0",
+  "certified_code_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
+  "certified_subject_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
+  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
+  "generated_from_head_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
+  "timestamp": "2026-08-10T16:12:04.584Z",
   "environment": {
     "platform": "win32",
     "node": "v26.3.1",
@@ -42,8 +42,8 @@
     "fail": 0,
     "stalls": 0,
     "recoveries": 0,
-    "median_ms": 11351,
-    "max_ms": 12152
+    "median_ms": 10062,
+    "max_ms": 11040
   },
   "backend_live_gates": {
     "auth": "PASS",
@@ -85,47 +85,51 @@
   "mcpb": {
     "build": "PASS",
     "validation": "PASS",
-    "sha256": "EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A"
+    "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
+    "sha256": "5C97BBE2FE39050C8616D0F482C894E5982DD7D2CB291F5E90EF4AFDF0FBF9F5"
   },
   "evidence": {
     "backend_live": {
       "file": ".data/certification/backend-live-result.json",
-      "timestamp": "2026-08-10T14:48:07.132Z",
+      "timestamp": "2026-08-10T15:57:01.955Z",
       "notebooks": 22
     },
-    "claude_catalog": {
-      "status": "PASS",
-      "count": 22,
-      "catalog_stale": false,
-      "remote_discovery_error": false
-    },
-    "claude_same_session": {
-      "status": "PASS",
-      "title": "FRONTIER-SAME-SESSION-20260810-1055",
-      "notebook_id": "7178e606-390b-42fe-bcd6-ea2f35d869b9",
-      "baseline_count": 22,
-      "observed_count": 23,
-      "claude_restarted": false,
-      "cleanup_confirmed_count": 22
-    },
-    "claude_grounded": {
-      "status": "PASS",
-      "notebook": "FANCESA",
-      "tool": "research",
-      "citation_linked": true,
-      "external_evidence": 0
-    },
-    "browser": {
-      "visible_frontier_chrome": 0
-    },
     "mcpb": {
-      "path": "release/NLM-Expert-Research-MCP-Frontier-0.1.0.mcpb",
-      "sha256": "EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A"
+      "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
+      "sha256": "5C97BBE2FE39050C8616D0F482C894E5982DD7D2CB291F5E90EF4AFDF0FBF9F5",
+      "validated": true,
+      "private_state_in_artifact": false
+    },
+    "claude_desktop": {
+      "status": "PASS",
+      "installed_version": "1.0.0",
+      "tools": 10,
+      "natural_catalog": true,
+      "same_session": {
+        "title": "FRONTIER-CERT-V1-SAME-SESSION-20260810-1603",
+        "notebook_id": "823f0c05-7c8f-460b-9b62-7a56a4f90ca5",
+        "observed_count": 23,
+        "claude_restarted": false,
+        "cleanup_confirmed_count": 22
+      },
+      "grounded": {
+        "notebook": "FANCESA",
+        "research": true,
+        "citation_linked": true,
+        "external_evidence": 0
+      },
+      "visible_frontier_chrome": 0,
+      "auth_persisted": true
+    },
+    "external_dependencies": {
+      "notebooklm": "Unofficial browser-auth transport; no official public Google NotebookLM API",
+      "google_auth": "External Google account access, sign-in controls, and NotebookLM availability apply"
     }
   },
   "blocking_gates": [],
   "open_p0": [],
   "open_p1": [],
   "NOTEBOOKLM_LIVE_READY": "YES",
-  "verdict": "RELEASE_CERTIFIED"
+  "CLAUDE_DESKTOP_READY": "YES",
+  "verdict": "PRODUCTION_READY_WITH_EXTERNAL_DEPENDENCIES"
 }

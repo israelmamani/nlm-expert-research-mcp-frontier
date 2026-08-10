@@ -2,13 +2,14 @@
 
 Generated from `docs/certification.json`. No gate defaults to PASS.
 
-- Product version: `0.1.0`
-- Certified code SHA: `2ee5585e7f4b03207ab0a10ddaf78afb706ed95b`
-- Attestation commit: `ed0c2d405a7b2226d23aad569c00fcca4a58fa4a`
-- Generated from HEAD: `ed0c2d405a7b2226d23aad569c00fcca4a58fa4a`
-- Timestamp: 2026-08-10T15:22:49.897Z
+- Product version: `1.0.0`
+- Certified code SHA: `e2d9df91cd96d29f3dc6176bad01117f36745150`
+- Attestation commit: `PENDING_ATTESTATION_COMMIT`
+- Generated from HEAD: `e2d9df91cd96d29f3dc6176bad01117f36745150`
+- Timestamp: 2026-08-10T16:12:04.584Z
 - NotebookLM live ready: **YES**
-- Verdict: **RELEASE_CERTIFIED**
+- Claude Desktop ready: **YES**
+- Verdict: **PRODUCTION_READY_WITH_EXTERNAL_DEPENDENCIES**
 
 ## Local gates
 
@@ -39,8 +40,8 @@ Generated from `docs/certification.json`. No gate defaults to PASS.
 - fail: **0**
 - stalls: **0**
 - recoveries: **0**
-- median_ms: **11351**
-- max_ms: **12152**
+- median_ms: **10062**
+- max_ms: **11040**
 
 ## Backend live gates
 
@@ -72,7 +73,8 @@ Generated from `docs/certification.json`. No gate defaults to PASS.
 
 - build: **PASS**
 - validation: **PASS**
-- sha256: **EB27D3F2CE83CF7457511BC5B902E9389A0A20F77A68CAA5AE7EC0C1E4E43C9A**
+- filename: **NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb**
+- sha256: **5C97BBE2FE39050C8616D0F482C894E5982DD7D2CB291F5E90EF4AFDF0FBF9F5**
 
 ## Blocking gates
 
