@@ -2,11 +2,11 @@
   "schema_version": "2.0",
   "product": "nlm-expert-research-mcp-frontier",
   "version": "1.0.0",
-  "certified_code_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
-  "certified_subject_sha": "e2d9df91cd96d29f3dc6176bad01117f36745150",
-  "attestation_commit_sha": "3a0c17cd9b47c91e6b117e198fdd789e5d243406",
-  "generated_from_head_sha": "3a0c17cd9b47c91e6b117e198fdd789e5d243406",
-  "timestamp": "2026-08-10T16:12:04.584Z",
+  "certified_code_sha": "62076639d8972b7b13596c33907e887dfbaa35d8",
+  "certified_subject_sha": "62076639d8972b7b13596c33907e887dfbaa35d8",
+  "attestation_commit_sha": "PENDING_ATTESTATION_COMMIT",
+  "generated_from_head_sha": "62076639d8972b7b13596c33907e887dfbaa35d8",
+  "timestamp": "2026-08-10T16:34:42.415Z",
   "environment": {
     "platform": "win32",
     "node": "v26.3.1",
@@ -42,8 +42,8 @@
     "fail": 0,
     "stalls": 0,
     "recoveries": 0,
-    "median_ms": 10062,
-    "max_ms": 11040
+    "median_ms": 10514,
+    "max_ms": 14128
   },
   "backend_live_gates": {
     "auth": "PASS",
@@ -86,17 +86,17 @@
     "build": "PASS",
     "validation": "PASS",
     "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
-    "sha256": "5C97BBE2FE39050C8616D0F482C894E5982DD7D2CB291F5E90EF4AFDF0FBF9F5"
+    "sha256": "A963E4439A3E19B347100920732FA14771D1A116462D73441DA0554F77619067"
   },
   "evidence": {
     "backend_live": {
       "file": ".data/certification/backend-live-result.json",
-      "timestamp": "2026-08-10T15:57:01.955Z",
+      "timestamp": "2026-08-10T16:29:42.270Z",
       "notebooks": 22
     },
     "mcpb": {
       "filename": "NLM-Expert-Research-MCP-Frontier-1.0.0.mcpb",
-      "sha256": "5C97BBE2FE39050C8616D0F482C894E5982DD7D2CB291F5E90EF4AFDF0FBF9F5",
+      "sha256": "A963E4439A3E19B347100920732FA14771D1A116462D73441DA0554F77619067",
       "validated": true,
       "private_state_in_artifact": false
     },
@@ -104,8 +104,10 @@
       "status": "PASS",
       "installed_version": "1.0.0",
       "tools": 10,
+      "runtime_manifest_launcher_identical_to_prior_certified_v1": true,
       "natural_catalog": true,
       "same_session": {
+        "status": "PASS",
         "title": "FRONTIER-CERT-V1-SAME-SESSION-20260810-1603",
         "notebook_id": "823f0c05-7c8f-460b-9b62-7a56a4f90ca5",
         "observed_count": 23,
